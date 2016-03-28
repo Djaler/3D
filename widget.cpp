@@ -1,6 +1,7 @@
 #include "widget.h"
 #include <QtMath>
 #include <vector>
+#include <iostream>
 #include "matrix.h"
 
 using namespace std;
@@ -12,7 +13,11 @@ Widget::Widget(QWidget *parent)
 	height = 700;
 	initUI();
 
-	model = new Model("african_head.obj");
+
+	image = QImage(width,height,QImage::Format_RGB32);
+
+	parser = new Parser("../obj/reconstructed_head.obj");
+	faces=parser->faces_;
 }
 
 void Widget::initUI()
@@ -52,90 +57,83 @@ void Widget::initUI()
 
 void Widget::paintEvent(QPaintEvent *)
 {
-	QImage image = QImage(width,height,QImage::Format_RGB32);
 	image.fill(QColor(0,0,0));
 
 	float heading = qDegreesToRadians((float)horizontalBar->value());
 	float sine=qSin(heading);
 	float cosine=qCos(heading);
 
-	Matrix3 headingTransform(new float[9]{cosine,0,-sine,0,1,0,sine,0,cosine});
+	Matrix headingTransform(new float[9]{cosine,0,-sine,0,1,0,sine,0,cosine});
 
 	float pitch = qDegreesToRadians((float)verticalBar->value());
 	sine=qSin(pitch);
 	cosine=qCos(pitch);
 
-	Matrix3 pitchTransform(new float[9]{1,0,0,0,cosine,-sine,0,sine,cosine});
+	Matrix pitchTransform(new float[9]{1,0,0,0,cosine,-sine,0,sine,cosine});
 
-	Matrix3 transform = headingTransform.multiply(pitchTransform);
+	Matrix transform = headingTransform.multiply(pitchTransform);
 
 
-	float zBuffer[width*height];
-	for(int i=0; i<width*height; i++)
+	float zBuffer[width * height];
+	for(int i = 0; i < width * height; i++)
 	{
-		zBuffer[i]=	numeric_limits<int>::min();
+		zBuffer[i] = numeric_limits<int>::min();
 	}
-	for(int i=0; i<model->nfaces(); i++)
+	QTime time;
+	time.start();
+	foreach (Triangle face, faces)
 	{
-		Triangle face=model->face(i);
-		Vertex v1 = face.v1;
-		v1.scale(width/2);
-		v1=transform.transform(v1);
-		v1.translate(width/2,height/2);
+		Vertex v1 = face.v1.transformed(transform);
+		//v1.scale(width / 2);
+		v1.translate(width / 2, height / 2);
 
-		Vertex v2 = face.v2;
-		v2.scale(width/2);
-		v2=transform.transform(v2);
-		v2.translate(width/2,height/2);
+		Vertex v2 = face.v2.transformed(transform);
+		//v2.scale(width / 2);
+		v2.translate(width  /2, height / 2);
 
-		Vertex v3 = face.v3;
-		v3.scale(width/2);
-		v3=transform.transform(v3);
-		v3.translate(width/2,height/2);
+		Vertex v3 = face.v3.transformed(transform);
+		//v3.scale(width / 2);
+		v3.translate(width / 2,height / 2);
 
-		Vertex ab(v2.x-v1.x,v2.y-v1.y,v2.z-v1.z);
-		Vertex ac(v3.x-v1.x,v3.y-v1.y,v3.z-v1.z);
+		Vertex norm = (v2-v1)*(v3-v1);
 
-		Vertex norm(ab.y * ac.z - ab.z * ac.y,
-					ab.z * ac.x - ab.x * ac.z,
-					ab.x * ac.y - ab.y * ac.x);
-
-		float normalLength = sqrt(norm.x * norm.x + norm.y * norm.y + norm.z * norm.z);
-		norm.x /= normalLength;
-		norm.y /= normalLength;
-		norm.z /= normalLength;
+		norm.normalize();
 
 		float angleCos = abs(norm.z);
 
-		QColor color(angleCos*255,angleCos*255,angleCos*255);
+		QColor color(angleCos * 255, angleCos * 255, angleCos * 255);
 
-		int minX = (int) qMax(0, qCeil(qMin(v1.x, qMin(v2.x, v3.x))));
-		int maxX = (int) qMin(width - 1, qFloor(qMax(v1.x, qMax(v2.x, v3.x))));
-		int minY = (int) qMax(0, qCeil(qMin(v1.y, qMin(v2.y, v3.y))));
-		int maxY = (int) qMin(height - 1, qFloor(qMax(v1.y, qMax(v2.y, v3.y))));
+		int minX = qMax(0, qCeil(qMin(v1.x, qMin(v2.x, v3.x))));
+		int maxX = qMin(width - 1, qFloor(qMax(v1.x, qMax(v2.x, v3.x))));
+		int minY = qMax(0, qCeil(qMin(v1.y, qMin(v2.y, v3.y))));
+		int maxY = qMin(height - 1, qFloor(qMax(v1.y, qMax(v2.y, v3.y))));
 
 		float triangleArea = (v1.y - v3.y) * (v2.x - v3.x) + (v2.y - v3.y) * (v3.x - v1.x);
 
-		for (int y = minY; y <= maxY; y++)
+		QRgb *rowData = (QRgb*)image.scanLine(minY);
+		int stride=image.bytesPerLine()/4;
+		for (int y = minY; y <= maxY; y++, rowData += stride)
 		{
-			for (int x = minX; x <= maxX; x++)
+			QRgb *line = rowData+minX;
+			for (int x = minX; x <= maxX; x++,line++)
 			{
 				float b1 = ((y - v3.y) * (v2.x - v3.x) + (v2.y - v3.y) * (v3.x - x)) / triangleArea;
 				float b2 = ((y - v1.y) * (v3.x - v1.x) + (v3.y - v1.y) * (v1.x - x)) / triangleArea;
 				float b3 = ((y - v2.y) * (v1.x - v2.x) + (v1.y - v2.y) * (v2.x - x)) / triangleArea;
 				if (b1 >= 0 && b1 <= 1 && b2 >= 0 && b2 <= 1 && b3 >= 0 && b3 <= 1)
 				{
-					float depth = b1*v1.z+b2*v2.z+b3*v3.z;
-					int zIndex = y*width+x;
-					if (zBuffer[zIndex]<depth)
+					float depth = b1 * v1.z + b2 * v2.z + b3 * v3.z;
+					int zIndex = y * width + x;
+					if (zBuffer[zIndex] < depth)
 					{
-						image.setPixel(x,y,color.rgb());
-						zBuffer[zIndex]=depth;
+						*(line)=color.rgb();
+						zBuffer[zIndex] = depth;
 					}
 				}
 			}
 		}
 	}
+	cerr<<"Время:"<<time.elapsed()<<endl;
 	QPainter painter(this);
 	painter.drawImage(0,0,image);
 	painter.end();

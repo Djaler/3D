@@ -1,21 +1,20 @@
 #ifndef MATRIX_H
 #define MATRIX_H
 
-#include "vertex.h"
-
-class Matrix3
+class Matrix
 {
 	float values[9];
 
 	public:
-		Matrix3(float values_[9])
+		Matrix(float *values_)
 		{
-			for(int i=0; i<9;i++)
+			for(int i = 0; i < 9; i++)
 			{
-				values[i]=values_[i];
+				values[i] = values_[i];
 			}
 		}
-		Matrix3 multiply(Matrix3 other)
+
+		Matrix multiply(Matrix other)
 		{
 			float result[9];
 			for (int row = 0; row < 3; row++)
@@ -25,17 +24,16 @@ class Matrix3
 					result[row * 3 + col] = 0;
 					for (int i = 0; i < 3; i++)
 					{
-						result[row * 3 + col] += values[row * 3 + i] * other.values[i * 3 + col];
+						result[row * 3 + col] += values[row * 3 + i] * other[i * 3 + col];
 					}
 				}
 			}
-			return Matrix3(result);
+			return Matrix(result);
 		}
-		Vertex transform(Vertex in)
+
+		float& operator [] (int n)
 		{
-			return Vertex(	in.x * values[0] + in.y * values[3] + in.z * values[6],
-							in.x * values[1] + in.y * values[4] + in.z * values[7],
-							in.x * values[2] + in.y * values[5] + in.z * values[8]);
+			return values[n];
 		}
 };
 

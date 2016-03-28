@@ -1,7 +1,7 @@
 #pragma once
 
 #include <QtWidgets>
-#include "model.h"
+#include "parser.h"
 
 class Widget : public QWidget
 {
@@ -16,7 +16,9 @@ class Widget : public QWidget
 
 		int width;
 		int height;
-		Model *model;
+		Parser *parser;
+		vector<Triangle> faces;
+		QImage image;
 
 		QWidget *drawArea;
 		QSlider *verticalBar;

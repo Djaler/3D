@@ -13,11 +13,10 @@ TEMPLATE = app
 
 
 SOURCES += main.cpp\
-		widget.cpp \
-	model.cpp
+		widget.cpp
 
 HEADERS  += widget.h \
-	model.h \
     vertex.h \
     triangle.h \
-    matrix.h
+    matrix.h \
+    parser.h

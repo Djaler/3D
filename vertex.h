@@ -48,7 +48,7 @@ struct Vertex
 		return Vertex(x - v.x, y - v.y, z - v.z);
 	}
 
-	Vertex operator *(const Vertex& v)
+	Vertex operator ^(const Vertex& v)
 	{
 		return Vertex(y * v.z - z * v.y,
 					  z * v.x - x * v.z,

@@ -31,7 +31,7 @@ class Matrix
 			return Matrix(result);
 		}
 
-		float& operator [] (int n)
+		float& operator[](int n)
 		{
 			return values[n];
 		}

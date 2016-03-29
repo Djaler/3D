@@ -6,63 +6,60 @@
 #include <fstream>
 #include <vector>
 #include "vertex.h"
-#include "triangle.h"
+#include "polygon.h"
 
 using namespace std;
 
-class Parser
+struct Parser
 {
-	vector<Vertex> verts_;
+	vector<Vertex> vertexes;
+	vector<Polygon> polygons;
 
-	public:
-		vector<Triangle> faces_;
-		Parser(const char *filename) : verts_(), faces_()
+	Parser(const char *filename, float scale_factor=1) : vertexes(), polygons()
+	{
+		ifstream in;
+		in.open (filename, ifstream::in);
+		if (in.fail())
 		{
-			ifstream in;
-			in.open (filename, ifstream::in);
-			if (in.fail()) return;
-			string line;
-			while (!in.eof())
+			return;
+		}
+		string line;
+		while (!in.eof())
+		{
+			getline(in, line);
+			istringstream iss(line.c_str());
+			char trash;
+			if (!line.compare(0, 2, "v "))
 			{
-				getline(in, line);
-				istringstream iss(line.c_str());
-				char trash;
-				if (!line.compare(0, 2, "v ")) {
-					iss >> trash;
+				iss >> trash;
 
-					float x,y,z;
-					iss >> x;
-					iss >> y;
-					iss >> z;
-
-					Vertex v(x,y,z);
-					verts_.push_back(v);
-					cerr << "# v# " << verts_.size()<<endl;
-				}
-				else if (!line.compare(0, 2, "f "))
+				float x, y, z;
+				iss >> x;
+				iss >> y;
+				iss >> z;
+				Vertex v(x, y, z);
+				if(scale_factor != 1)
 				{
-					vector<long> f;
-					int itrash, idx;
-					iss >> trash;
-					while (iss >> idx >> trash >> itrash >> trash >> itrash)
-					{
-						idx--; // in wavefront obj all indices start at 1, not zero
-						f.push_back(idx);
-					}
-					Triangle triangle(verts_[f[0]],verts_[f[1]],verts_[f[2]]);
-					faces_.push_back(triangle);
-					cerr << "# f# " << faces_.size()<<endl;
+					v.scale(scale_factor);
 				}
+				vertexes.push_back(v);
+				cerr << "v " << vertexes.size()<<endl;
 			}
-			cerr << "# v# " << verts_.size() << " f# "  << faces_.size() << endl;
+			else if (!line.compare(0, 2, "f "))
+			{
+				vector<Vertex> t;
+				int itrash, idx;
+				iss >> trash;
+				while (iss >> idx >> trash >> itrash >> trash >> itrash)
+				{
+					idx--;
+					t.push_back(vertexes[idx]);
+				}
+				polygons.push_back(Polygon(t[0], t[1], t[2]));
+				cerr << "t " << polygons.size()<<endl;
+			}
 		}
-		long nfaces()
-		{
-			return faces_.size();
-		}
-		Triangle face(long i)
-		{
-			return faces_[i];
-		}
+		cerr << "v " << vertexes.size() << "t "  << polygons.size() << endl;
+	}
 };
 #endif //MODEL_H

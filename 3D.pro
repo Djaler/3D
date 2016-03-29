@@ -12,11 +12,16 @@ TARGET = 3D
 TEMPLATE = app
 
 
-SOURCES += main.cpp\
-		widget.cpp
+SOURCES += main.cpp \
+    mainWindow.cpp
 
-HEADERS  += widget.h \
-    vertex.h \
-    triangle.h \
-    matrix.h \
-    parser.h
+HEADERS  += \
+	vertex.h \
+	matrix.h \
+	parser.h \
+    mainWindow.h \
+    polygon.h
+
+
+QMAKE_LFLAGS += -fopenmp
+QMAKE_CXXFLAGS += -fopenmp

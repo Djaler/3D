@@ -3,22 +3,26 @@
 #include <QtWidgets>
 #include "parser.h"
 
-class Widget : public QWidget
+class MainWindow : public QWidget
 {
 		Q_OBJECT
 
 	public:
-		Widget(QWidget *parent = 0);
+		MainWindow(QWidget *parent = 0);
+
 	private:
 		void initUI();
 		void center();
 		void paintEvent(QPaintEvent *);
 
+		void initModel();
+
 		int width;
 		int height;
 		Parser *parser;
-		vector<Triangle> faces;
+		vector<Polygon> polygons;
 		QImage image;
+		int numCores;
 
 		QWidget *drawArea;
 		QSlider *verticalBar;

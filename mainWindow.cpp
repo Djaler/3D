@@ -71,14 +71,24 @@ void MainWindow::paintEvent(QPaintEvent *)
 	float heading = qDegreesToRadians((float)horizontalBar->value());
 	float sine=qSin(heading);
 	float cosine=qCos(heading);
-	Matrix headingTransform(new float[9]{cosine, 0, -sine, 0, 1, 0, sine, 0, cosine});
+	Mat4 headingTransform;
+	headingTransform.identity();
+	headingTransform[0] = cosine;
+	headingTransform[2] = -sine;
+	headingTransform[8] = sine;
+	headingTransform[10] = cosine;
 
 	float pitch = qDegreesToRadians((float)verticalBar->value());
 	sine=qSin(pitch);
 	cosine=qCos(pitch);
-	Matrix pitchTransform(new float[9]{1, 0, 0, 0, cosine, -sine, 0, sine, cosine});
+	Mat4 pitchTransform;
+	pitchTransform.identity();
+	pitchTransform[5] = cosine;
+	pitchTransform[6] = -sine;
+	pitchTransform[9] = sine;
+	pitchTransform[10] = cosine;
 
-	Matrix transform = headingTransform.multiply(pitchTransform);
+	Mat4 transform = pitchTransform * headingTransform;
 
 	float zBuffer[width * height];
 	for(int i = 0; i < width * height; i++)
@@ -93,18 +103,16 @@ void MainWindow::paintEvent(QPaintEvent *)
 	for(size_t i = 0; i < polygons.size(); i++)
 	{
 		Polygon polygon = polygons[i];
-		Vertex v1 = polygon.v1.transformed(transform);
-		v1.translate(width / 2, height / 2);
+		Vec3 v1 = transform * polygon.v1;
+		v1 += Vec3(width / 2, height / 2);
 
-		Vertex v2 = polygon.v2.transformed(transform);
-		v2.translate(width / 2, height / 2);
+		Vec3 v2 = transform * polygon.v2;
+		v2 += Vec3(width / 2, height / 2);
 
-		Vertex v3 = polygon.v3.transformed(transform);
-		v3.translate(width / 2,height / 2);
+		Vec3 v3 = transform * polygon.v3;
+		v3 += Vec3(width / 2, height / 2);
 
-		Vertex norm = (v2 - v1) ^ (v3 - v1);
-
-		norm.normalize();
+		Vec3 norm = ((v2 - v1) ^ (v3 - v1)).normalize();
 
 		float intensity = abs(norm.z);
 

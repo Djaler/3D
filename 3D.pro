@@ -16,11 +16,11 @@ SOURCES += main.cpp \
     mainWindow.cpp
 
 HEADERS  += \
-	vertex.h \
 	matrix.h \
 	parser.h \
     mainWindow.h \
-    polygon.h
+    polygon.h \
+    vector.h
 
 
 QMAKE_LFLAGS += -fopenmp

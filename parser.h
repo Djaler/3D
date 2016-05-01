@@ -5,14 +5,14 @@
 #include <sstream>
 #include <fstream>
 #include <vector>
-#include "vertex.h"
+#include "vector.h"
 #include "polygon.h"
 
 using namespace std;
 
 struct Parser
 {
-	vector<Vertex> vertexes;
+	vector<Vec3> vertexes;
 	vector<Polygon> polygons;
 
 	Parser(const char *filename, float scale_factor=1) : vertexes(), polygons()
@@ -37,17 +37,17 @@ struct Parser
 				iss >> x;
 				iss >> y;
 				iss >> z;
-				Vertex v(x, y, z);
+				Vec3 v(x, y, z);
 				if(scale_factor != 1)
 				{
-					v.scale(scale_factor);
+					v *= scale_factor;
 				}
 				vertexes.push_back(v);
 				cerr << "v " << vertexes.size()<<endl;
 			}
 			else if (!line.compare(0, 2, "f "))
 			{
-				vector<Vertex> t;
+				vector<Vec3> t;
 				int itrash, idx;
 				iss >> trash;
 				while (iss >> idx >> trash >> itrash >> trash >> itrash)

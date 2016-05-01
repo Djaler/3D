@@ -58,34 +58,16 @@ struct Vec3
 
 	float operator[](int i) const
 	{
-		switch(i)
-		{
-			case 0:
-				return x;
-				break;
-			case 1:
-				return y;
-				break;
-			case 2:
-				return z;
-				break;
-		}
+		if(i==0) return x;
+		else if(i==1) return y;
+		else return z;
 	}
 
 	float& operator[](int i)
 	{
-		switch(i)
-		{
-			case 0:
-				return x;
-				break;
-			case 1:
-				return y;
-				break;
-			case 2:
-				return z;
-				break;
-		}
+		if(i==0) return x;
+		else if(i==1) return y;
+		else return z;
 	}
 };
 
@@ -149,40 +131,18 @@ struct Vec4
 
 		float operator[](int i) const
 		{
-			switch(i)
-			{
-				case 0:
-					return x;
-					break;
-				case 1:
-					return y;
-					break;
-				case 2:
-					return z;
-					break;
-				case 3:
-					return w;
-					break;
-			}
+			if(i==0) return x;
+			else if(i==1) return y;
+			else if(i==2) return z;
+			else return z;
 		}
 
 		float& operator[](int i)
 		{
-			switch(i)
-			{
-				case 0:
-					return x;
-					break;
-				case 1:
-					return y;
-					break;
-				case 2:
-					return z;
-					break;
-				case 3:
-					return w;
-					break;
-			}
+			if(i==0) return x;
+			else if(i==1) return y;
+			else if(i==2) return z;
+			else return z;
 		}
 };
 

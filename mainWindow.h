@@ -13,18 +13,20 @@ class MainWindow : public QWidget
 	private:
 		void initUI();
 		void center();
-		void paintEvent(QPaintEvent *);
 
 		void initModel();
+		void drawTriangle(Vec3 *v1, Vec3 *v2, Vec3 *v3, QColor color, QImage *image, float *zBuffer);
 
 		int width;
 		int height;
 		Parser *parser;
 		vector<Polygon> polygons;
-		QImage image;
 		int numCores;
 
-		QWidget *drawArea;
+		QLabel *drawArea;
 		QSlider *verticalBar;
 		QSlider *horizontalBar;
+
+	private slots:
+		void redraw();
 };

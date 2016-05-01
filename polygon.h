@@ -9,12 +9,7 @@ struct Polygon
 	Vec3 v2;
 	Vec3 v3;
 
-	Polygon(Vec3 v1_, Vec3 v2_, Vec3 v3_)
-	{
-		v1 = v1_;
-		v2 = v2_;
-		v3 = v3_;
-	}
+	Polygon(Vec3 v1, Vec3 v2, Vec3 v3) : v1(v1), v2(v2), v3(v3) { }
 };
 
 #endif // TRIANGLE_H

@@ -13,14 +13,15 @@ TEMPLATE = app
 
 
 SOURCES += main.cpp \
-    mainWindow.cpp
+	mainWindow.cpp \
+	vector.cpp
 
 HEADERS  += \
 	matrix.h \
 	parser.h \
-    mainWindow.h \
-    polygon.h \
-    vector.h
+	mainWindow.h \
+	polygon.h \
+	vector.h
 
 
 QMAKE_LFLAGS += -fopenmp

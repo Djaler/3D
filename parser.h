@@ -1,5 +1,4 @@
-#ifndef MODEL_H
-#define MODEL_H
+#pragma once
 
 #include <iostream>
 #include <sstream>
@@ -62,4 +61,3 @@ struct Parser
 		cerr << "v " << vertexes.size() << "t "  << polygons.size() << endl;
 	}
 };
-#endif //MODEL_H

@@ -1,5 +1,7 @@
-#ifndef VECTOR_H
-#define VECTOR_H
+#pragma once
+#include <cmath>
+
+struct Vec4;
 
 struct Vec3
 {
@@ -20,6 +22,14 @@ struct Vec3
 		x *= f;
 		y *= f;
 		z *= f;
+		return *this;
+	}
+
+	Vec3 &operator/=(const float f)
+	{
+		x /= f;
+		y /= f;
+		z /= f;
 		return *this;
 	}
 
@@ -114,19 +124,18 @@ struct Vec4
 		{
 			return Vec4(y * other.z - z * other.y,
 						z * other.x - x * other.z,
-						x * other.y - y * other.x,
-						0.0f);
+						x * other.y - y * other.x);
 		}
 
 		float length() const
 		{
-			return std::sqrt(x * x + y * y + z * z + w * w);
+			return sqrt(x * x + y * y + z * z);
 		}
 
 		Vec4 normalize() const
 		{
 			float l = 1.0f / length();
-			return Vec4(x * l, y * l, z * l, w * l);
+			return Vec4(x * l, y * l, z * l);
 		}
 
 		float operator[](int i) const
@@ -134,7 +143,7 @@ struct Vec4
 			if(i==0) return x;
 			else if(i==1) return y;
 			else if(i==2) return z;
-			else return z;
+			else return w;
 		}
 
 		float& operator[](int i)
@@ -142,8 +151,11 @@ struct Vec4
 			if(i==0) return x;
 			else if(i==1) return y;
 			else if(i==2) return z;
-			else return z;
+			else return w;
 		}
 };
 
-#endif // VECTOR_H
+Vec4 Vec3ToVec4(const Vec3& v);
+Vec3 Vec4ToVec3(const Vec4& v);
+
+

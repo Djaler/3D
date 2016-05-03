@@ -20,8 +20,8 @@ MainWindow::MainWindow(QWidget *parent)
 
 void MainWindow::initModel()
 {
-	parser = new Parser("../obj/diablo3_pose.obj", width/2);
-	//parser = new Parser("../obj/Millennium_Falcon.obj", width/2);
+	//parser = new Parser("../obj/diablo3_pose.obj", width/2);
+	parser = new Parser("../obj/Millennium_Falcon.obj");
 	//parser = new Parser("../obj/reconstructed_head.obj");
 
 	polygons = parser->polygons;
@@ -49,9 +49,9 @@ void MainWindow::initUI()
 	mainLayout->addLayout(horizontalLayout);
 
 	horizontalBar = new QSlider(Qt::Horizontal);
-	horizontalBar->setMinimum(0);
-	horizontalBar->setMaximum(360);
-	horizontalBar->setValue(180);
+	horizontalBar->setMinimum(-180);
+	horizontalBar->setMaximum(180);
+	horizontalBar->setValue(0);
 
 	connect(horizontalBar, SIGNAL(valueChanged(int)), this, SLOT(redraw()));
 	mainLayout->addWidget(horizontalBar);
@@ -61,14 +61,14 @@ void MainWindow::initUI()
 	show();
 }
 
-void MainWindow::drawTriangle(Vec3 *v1, Vec3 *v2, Vec3 *v3, QColor color, QImage *image, float *zBuffer)
+void MainWindow::drawTriangle(Vec3 v1, Vec3 v2, Vec3 v3, QColor color, QImage *image, float *zBuffer)
 {
-	int minX = max(0.0f, ceil(min(v1->x, min(v2->x, v3->x))));
-	int maxX = min(width - 1.0f, floor(max(v1->x, max(v2->x, v3->x))));
-	int minY = max(0.0f, ceil(min(v1->y, min(v2->y, v3->y))));
-	int maxY = min(height - 1.0f, floor(max(v1->y, max(v2->y, v3->y))));
+	int minX = max(0.0f, ceil(min(v1.x, min(v2.x, v3.x))));
+	int maxX = min(width - 1.0f, floor(max(v1.x, max(v2.x, v3.x))));
+	int minY = max(0.0f, ceil(min(v1.y, min(v2.y, v3.y))));
+	int maxY = min(height - 1.0f, floor(max(v1.y, max(v2.y, v3.y))));
 
-	float triangleArea = (v1->y - v3->y) * (v2->x - v3->x) + (v2->y - v3->y) * (v3->x - v1->x);
+	float triangleArea = (v1.y - v3.y) * (v2.x - v3.x) + (v2.y - v3.y) * (v3.x - v1.x);
 
 	QRgb *rowData = (QRgb*)image->scanLine(minY);
 	int stride = image->bytesPerLine() / 4;
@@ -77,13 +77,13 @@ void MainWindow::drawTriangle(Vec3 *v1, Vec3 *v2, Vec3 *v3, QColor color, QImage
 		QRgb *line = rowData + minX;
 		for (int x = minX; x <= maxX; x++, line++)
 		{
-			float b1 = ((y - v3->y) * (v2->x - v3->x) + (v2->y - v3->y) * (v3->x - x)) / triangleArea;
-			float b2 = ((y - v1->y) * (v3->x - v1->x) + (v3->y - v1->y) * (v1->x - x)) / triangleArea;
-			float b3 = ((y - v2->y) * (v1->x - v2->x) + (v1->y - v2->y) * (v2->x - x)) / triangleArea;
+			float b1 = ((y - v3.y) * (v2.x - v3.x) + (v2.y - v3.y) * (v3.x - x)) / triangleArea;
+			float b2 = ((y - v1.y) * (v3.x - v1.x) + (v3.y - v1.y) * (v1.x - x)) / triangleArea;
+			float b3 = ((y - v2.y) * (v1.x - v2.x) + (v1.y - v2.y) * (v2.x - x)) / triangleArea;
 
 			if (b1 >= 0 && b1 <= 1 && b2 >= 0 && b2 <= 1 && b3 >= 0 && b3 <= 1)
 			{
-				float depth = b1 * v1->z + b2 * v2->z + b3 * v3->z;
+				float depth = b1 * v1.z + b2 * v2.z + b3 * v3.z;
 				int zIndex = y * width + x;
 				if (zBuffer[zIndex] < depth)
 				{
@@ -95,6 +95,29 @@ void MainWindow::drawTriangle(Vec3 *v1, Vec3 *v2, Vec3 *v3, QColor color, QImage
 	}
 }
 
+Mat4 lookat(Vec4 eye, Vec4 center, Vec4 up) {
+	Vec4 z = (center-eye).normalize();
+	Vec4 x = (up ^ z);
+	cerr<<x.x<<" "<<x.y<<" "<<x.z<<" "<<x.w<<endl;
+	x = x.normalize();
+	cerr<<x.x<<" "<<x.y<<" "<<x.z<<" "<<x.w<<endl;
+	Vec4 y = (z ^ x);
+	y=y.normalize();
+	Mat4 orientation;
+	orientation.identity();
+	Mat4 translation;
+	translation.identity();
+	for (int i=0; i<3; i++)
+	{
+		orientation[0 + i * 4] = x[i];
+		orientation[1 + i * 4] = y[i];
+		orientation[2 + i * 4] = z[i];
+		translation[i + 3 * 4] = -center[i];
+	}
+	Mat4 view = orientation * translation;
+	return view;
+}
+
 void MainWindow::redraw()
 {
 	QTime time;
@@ -103,27 +126,9 @@ void MainWindow::redraw()
 	QImage image = QImage(width, height, QImage::Format_RGB32);
 	image.fill(QColor(0, 0, 0));
 
-	float y = horizontalBar->value() * M_PI / 180;
-	float sine=qSin(y);
-	float cosine=qCos(y);
-	Mat4 yRotate;
-	yRotate.identity();
-	yRotate[0 + 4 * 0] = cosine;
-	yRotate[2 + 4 * 0] = -sine;
-	yRotate[0 + 4 * 2] = sine;
-	yRotate[2 + 4 * 2] = cosine;
+	Mat4 rotate = Mat4::rotate(verticalBar->value(),horizontalBar->value());
 
-	float x = verticalBar->value() * M_PI / 180;
-	sine=qSin(x);
-	cosine=qCos(x);
-	Mat4 xRotate;
-	xRotate.identity();
-	xRotate[1 + 4 * 1] = cosine;
-	xRotate[2 + 4 * 1] = -sine;
-	xRotate[1 + 4 * 2] = sine;
-	xRotate[2 + 4 * 2] = cosine;
-
-	Mat4 rotate = xRotate * yRotate;
+	Mat4 translate = Mat4::translate(width/2, height/2);
 
 	float zBuffer[width * height];
 	for(int i = 0; i < width * height; i++)
@@ -131,25 +136,43 @@ void MainWindow::redraw()
 		zBuffer[i] = numeric_limits<int>::min();
 	}
 
+	Vec4 eye(0,100,700,1);
+	Vec4 center(0,0,0,1);
+
+	Mat4 view  = lookat(eye, center, Vec4(0,1,0));
+
+	Mat4 projection;
+	projection.identity();
+	projection[3 + 2 * 4] = -1/(eye-center).length();
+
 	#pragma omp parallel for num_threads(numCores)
 	for(size_t i = 0; i < polygons.size(); i++)
 	{
 		Polygon polygon = polygons[i];
-		Vec3 v1 = rotate * polygon.v1;
-		v1 += Vec3(width / 2, height / 2);
+		Vec4 v1 = Vec3ToVec4(polygon.v1);
+		v1 = rotate * v1;
+		v1 = view * v1;
+		v1 = projection * v1;
+		v1 = translate * v1;
 
-		Vec3 v2 = rotate * polygon.v2;
-		v2 += Vec3(width / 2, height / 2);
+		Vec4 v2 = Vec3ToVec4(polygon.v2);
+		v2 = rotate * v2;
+		v2 = view * v2;
+		v2 = projection * v2;
+		v2 = translate * v2;
 
-		Vec3 v3 = rotate * polygon.v3;
-		v3 += Vec3(width / 2, height / 2);
+		Vec4 v3 = Vec3ToVec4(polygon.v3);
+		v3 = rotate * v3;
+		v3 = view * v3;
+		v3 = projection * v3;
+		v3 = translate * v3;
 
-		Vec3 norm = ((v2 - v1) ^ (v3 - v1)).normalize();
+		Vec4 norm = ((v2 - v1) ^ (v3 - v1)).normalize();
 
 		float intensity = abs(norm.z);
 		QColor color(intensity * 255, intensity * 255, intensity * 255);
 
-		drawTriangle(&v1, &v2, &v3, color, &image, zBuffer);
+		drawTriangle(Vec4ToVec3(v1), Vec4ToVec3(v2), Vec4ToVec3(v3), color, &image, zBuffer);
 
 	}
 	drawArea->setPixmap(QPixmap::fromImage(image));

@@ -1,5 +1,4 @@
-#ifndef MATRIX_H
-#define MATRIX_H
+#pragma once
 
 #include "vector.h"
 
@@ -25,28 +24,16 @@ struct Mat4
 	Mat4 operator *(const Mat4 &other) const
 	{
 		Mat4 result;
-
+		result.clear();
 		for(int i = 0; i < 4; i++)
 		{
 			for(int j = 0 ; j < 4; j++)
 			{
-				result.m[i + j * 4] = m[i + 0 * 4] * other.m[0 + j * 4] +
-									  m[i + 1 * 4] * other.m[1 + j * 4] +
-									  m[i + 2 * 4] * other.m[2 + j * 4] +
-									  m[i + 3 * 4] * other.m[3 + j * 4];
+				for(int k = 0; k < 4; k++)
+				{
+					result.m[i + j * 4] += m[i + k * 4] * other.m[k + j * 4];
+				}
 			}
-		}
-
-		return result;
-	}
-
-	Mat4 operator *(const float f) const
-	{
-		Mat4 result;
-
-		for(int i = 0; i < 16; i++)
-		{
-			result.m[i] = m[i] * f;
 		}
 
 		return result;
@@ -58,7 +45,7 @@ struct Mat4
 
 		for (int i = 0; i < 4; i++)
 		{
-			result[i] = v[0] * m[i + 0 * 4] + v[1] * m[i + 1 * 4] + v[2] * m[i + 2 * 4] + v[3] * m[i + 3 * 4];
+			result[i] = v.x * m[i + 0 * 4] + v.y * m[i + 1 * 4] + v.z * m[i + 2 * 4] + v.w * m[i + 3 * 4];
 		}
 
 		return result;
@@ -70,7 +57,7 @@ struct Mat4
 
 		for (int i = 0; i < 3; i++)
 		{
-			result[i] = v[0] * m[i + 0 * 4] + v[1] * m[i + 1 * 4] + v[2] * m[i + 2 * 4];
+			result[i] = v.x * m[i + 0 * 4] + v.y * m[i + 1 * 4] + v.z * m[i + 2 * 4];
 		}
 
 		return result;
@@ -107,6 +94,55 @@ struct Mat4
 
 		return *this;
 	}
-};
 
-#endif // MATRIX_H
+	static Mat4 rotate(float xAngle = 0.0f, float yAngle = 0.0f, float zAngle = 0.0f)
+	{
+		xAngle *= M_PI / 180;
+		yAngle *= M_PI / 180;
+		zAngle *= M_PI / 180;
+
+		float a = cos(xAngle);
+		float b = sin(xAngle);
+		float c = cos(yAngle);
+		float d = sin(yAngle);
+		float e = cos(zAngle);
+		float f = sin(zAngle);
+
+		Mat4 rotate;
+		rotate.identity();
+		rotate[0 + 0 * 4] = c * e;
+		rotate[1 + 0 * 4] = -c * f;
+		rotate[2 + 0 * 4] = -d;
+		rotate[0 + 1 * 4] = -b * d * e + a * f;
+		rotate[1 + 1 * 4] = b * d * f + a * e;
+		rotate[2 + 1 * 4] = -b * c;
+		rotate[0 + 2 * 4] = a * d * e + b * f;
+		rotate[1 + 2 * 4] = -a * d * f + b * e;
+		rotate[2 + 2 * 4] = a * c;
+
+
+		return rotate;
+	}
+
+	static Mat4 translate(float x = 0.0f, float y = 0.0f, float z = 0.0f)
+	{
+		Mat4 translate;
+		translate.identity();
+		translate[0 + 3 * 4] = x;
+		translate[1 + 3 * 4] = y;
+		translate[2 + 3 * 4] = z;
+		return translate;
+	}
+
+	void print()
+	{
+		for(int i = 0; i < 4; i++)
+		{
+			for(int j = 0; j < 4; j++)
+			{
+				cerr<<m[j + i * 4]<<" ";
+			}
+			cerr<<endl;
+		}
+	}
+};

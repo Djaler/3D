@@ -43,16 +43,21 @@ struct Vec3
 		return Vec3(x - other.x, y - other.y, z - other.z);
 	}
 
-	Vec3 operator *(const Vec3 &other) const
+	static float dotProduct(const Vec3& v1, const Vec3& v2)
 	{
-		return Vec3(x * other.x, y * other.y, z * other.z);
+		return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
 	}
 
-	Vec3 operator ^(const Vec3 &other) const
+	static Vec3 crossProduct(const Vec3& v1, const Vec3& v2)
 	{
-		return Vec3(y * other.z - z * other.y,
-					z * other.x - x * other.z,
-					x * other.y - y * other.x);
+		return Vec3(	v1.y * v2.z - v1.z * v2.y,
+						v1.z * v2.x - v1.x * v2.z,
+						v1.x * v2.y - v1.y * v2.x);
+	}
+
+	static Vec3 normal(const Vec3& v1, const Vec3& v2, const Vec3& v3)
+	{
+		return crossProduct((v2 - v1), (v3 - v1)).normalized();
 	}
 
 	float length() const
@@ -60,10 +65,10 @@ struct Vec3
 		return sqrt(x * x + y * y + z * z);
 	}
 
-	Vec3 normalize() const
+	Vec3 normalized() const
 	{
-		float l = 1.0f / length();
-		return Vec3(x * l, y * l, z * l);
+		float l = length();
+		return Vec3(x / l, y / l, z / l);
 	}
 
 	float operator[](int i) const
@@ -118,24 +123,6 @@ struct Vec4
 		Vec4 operator *(const Vec4 &other) const
 		{
 			return Vec4(x * other.x, y * other.y, z * other.z, w * other.w);
-		}
-
-		Vec4 operator ^(const Vec4 &other) const
-		{
-			return Vec4(y * other.z - z * other.y,
-						z * other.x - x * other.z,
-						x * other.y - y * other.x);
-		}
-
-		float length() const
-		{
-			return sqrt(x * x + y * y + z * z);
-		}
-
-		Vec4 normalize() const
-		{
-			float l = 1.0f / length();
-			return Vec4(x * l, y * l, z * l);
 		}
 
 		float operator[](int i) const

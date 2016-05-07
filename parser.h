@@ -42,7 +42,6 @@ struct Parser
 					v *= scale_factor;
 				}
 				vertexes.push_back(v);
-				cerr << "v " << vertexes.size()<<endl;
 			}
 			else if (!line.compare(0, 2, "f "))
 			{
@@ -55,7 +54,6 @@ struct Parser
 					t.push_back(vertexes[idx]);
 				}
 				polygons.push_back(Polygon(t[0], t[1], t[2]));
-				cerr << "t " << polygons.size()<<endl;
 			}
 		}
 		cerr << "v " << vertexes.size() << "t "  << polygons.size() << endl;

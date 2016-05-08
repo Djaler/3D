@@ -1,6 +1,6 @@
+#include <omp.h>
 #include "mainWindow.h"
 #include "matrix.h"
-#include <omp.h>
 
 using namespace std;
 
@@ -20,18 +20,17 @@ MainWindow::MainWindow(QWidget *parent)
 
 void MainWindow::initModel()
 {
-	//parser = new Parser("../obj/diablo3_pose.obj");
-	//parser = new Parser("../obj/Millennium_Falcon.obj");
-	//parser = new Parser("../obj/reconstructed_head.obj");
+	object = new Object("../obj/diablo3_pose.obj");
+	//object = Object("../obj/Millennium_Falcon.obj");
+	//object = new Object("../obj/reconstructed_head.obj");
 
-	vector<Vec3> vertexes;
-	vertexes.push_back(Vec3(0,0,0));
-	vertexes.push_back(Vec3(0,1,0));
-	vertexes.push_back(Vec3(0,0,1));
-	vertexes.push_back(Vec3(1,0,0));
+	/*object.addVertex(Vec3(0,0,0));
+	object.addVertex(Vec3(0,1,0));
+	object.addVertex(Vec3(0,0,1));
+	object.addVertex(Vec3(1,0,0));
 
-	polygons.push_back(Polygon(vertexes[0],vertexes[1],vertexes[2]));
-	polygons.push_back(Polygon(vertexes[0],vertexes[2],vertexes[3]));
+	object.addPolygon(vector<size_t> {0,1,2});
+	object.addPolygon(vector<size_t> {0,2,3});*/
 }
 
 void MainWindow::initUI()
@@ -62,6 +61,11 @@ void MainWindow::initUI()
 
 	connect(horizontalBar, SIGNAL(valueChanged(int)), this, SLOT(redraw()));
 	mainLayout->addWidget(horizontalBar);
+
+	fpsMeter = new QLabel(drawArea);
+	fpsMeter->setGeometry(0,0,100,50);
+	fpsMeter->setStyleSheet("QLabel { background-color : black; color : white; }");
+	fpsMeter->show();
 
 	setLayout(mainLayout);
 	center();
@@ -116,7 +120,7 @@ void MainWindow::redraw()
 
 	Mat4 rotate = Mat4::rotate(verticalBar->value(),horizontalBar->value());
 
-	Mat4 scale = Mat4::scale(width/4,width/4,width/4);
+	Mat4 scale = Mat4::scale(width/2,width/2,width/2);
 
 	Mat4 translate = Mat4::identity();
 
@@ -126,37 +130,49 @@ void MainWindow::redraw()
 		zBuffer[i] = numeric_limits<int>::max();
 	}
 
-	Vec3 eye(0,0,-500);
+	Vec3 eye(0,0,500);
 	Vec3 center(0,0,0);
 	eye = rotate * eye;
+	//cerr<<eye.x<<" "<<eye.y<<" "<<eye.z<<endl;
 
 	Mat4 view = Mat4::lookAt(eye, center, Vec3(0,1,0));
+	//view.print();
+	//cerr<<endl;
 
 	Mat4 projection;
 	projection.identity();
 	projection[3 + 2 * 4] = -1/(eye-center).length();
 
-	Mat4 model = scale * translate;
+	Mat4 model = scale * translate;// * rotate;
 
 	#pragma omp parallel for num_threads(numCores)
-	for(size_t i = 0; i < polygons.size(); i++)
+	for(size_t i = 0; i < object->polygonsCount(); i++)
 	{
-		Polygon polygon = polygons[i];
+		Polygon polygon = object->polygon(i);
 		Vec4 v1 = Vec3ToVec4(polygon.v1);
 		v1 = model * v1;
 		v1 = view * v1;
+		//v1 = projection * v1;
 
 		Vec4 v2 = Vec3ToVec4(polygon.v2);
 		v2 = model * v2;
 		v2 = view * v2;
+		//v2 = projection * v2;
 
 		Vec4 v3 = Vec3ToVec4(polygon.v3);
+		//cerr<<v3.x<<" "<<v3.y<<" "<<v3.z<<" "<<v3.w<<endl;
 		v3 = model * v3;
+		//cerr<<v3.x<<" "<<v3.y<<" "<<v3.z<<" "<<v3.w<<endl;
 		v3 = view * v3;
+		//cerr<<v3.x<<" "<<v3.y<<" "<<v3.z<<" "<<v3.w<<endl;
+		//v3 = projection * v3;
+		//cerr<<v3.x<<" "<<v3.y<<" "<<v3.z<<" "<<v3.w<<endl;
 
 		Vec3 v1_3 = Vec4ToVec3(v1);
 		Vec3 v2_3 = Vec4ToVec3(v2);
 		Vec3 v3_3 = Vec4ToVec3(v3);
+		//cerr<<v3_3.x<<" "<<v3_3.y<<" "<<v3_3.z<<endl;
+		//cerr<<endl;
 
 		Vec3 norm = Vec3::normal(v1_3,v2_3,v3_3);
 
@@ -167,7 +183,8 @@ void MainWindow::redraw()
 
 	}
 	drawArea->setPixmap(QPixmap::fromImage(image.mirrored()));
-	cerr << "Время:" << time.elapsed() << endl;
+
+	fpsMeter->setText(QString("FPS = %1").arg(1000 / time.elapsed()));
 }
 
 void MainWindow::center()

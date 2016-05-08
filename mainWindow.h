@@ -1,7 +1,7 @@
 #pragma once
 
 #include <QtWidgets>
-#include "parser.h"
+#include "object.h"
 
 class MainWindow : public QWidget
 {
@@ -19,13 +19,14 @@ class MainWindow : public QWidget
 
 		int width;
 		int height;
-		Parser *parser;
-		vector<Polygon> polygons;
+
+		Object *object;
 		int numCores;
 
 		QLabel *drawArea;
 		QSlider *verticalBar;
 		QSlider *horizontalBar;
+		QLabel *fpsMeter;
 
 	private slots:
 		void redraw();

@@ -18,10 +18,10 @@ SOURCES += main.cpp \
 
 HEADERS  += \
 	matrix.h \
-	parser.h \
 	mainWindow.h \
-	polygon.h \
-	vector.h
+	vector.h \
+    object.h \
+    polygon.h
 
 
 QMAKE_LFLAGS += -fopenmp

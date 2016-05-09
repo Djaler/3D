@@ -13,8 +13,7 @@ TEMPLATE = app
 
 
 SOURCES += main.cpp \
-	mainWindow.cpp \
-	vector.cpp
+	mainWindow.cpp
 
 HEADERS  += \
 	matrix.h \

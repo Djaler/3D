@@ -2,7 +2,7 @@
 
 #include <fstream>
 #include <sstream>
-#include <iostream>
+#include <QDebug>
 #include <vector>
 #include "vector.h"
 #include "polygon.h"
@@ -11,15 +11,17 @@ using namespace std;
 
 class Object
 {
-	vector<Vec3> vertexes;
 	vector<Polygon> polygons;
 
 	public:
-		Object(const char *filename) : vertexes(), polygons()
+		Object() : polygons() {}
+
+		Object(const char *filename) : polygons()
 		{
+			vector<Vec3> vertexes;
 			ifstream in;
-			in.open (filename, ifstream::in);
-			if (in.fail())
+			in.open(filename);
+			if(in.fail())
 			{
 				return;
 			}
@@ -36,7 +38,7 @@ class Object
 					iss >> x;
 					iss >> y;
 					iss >> z;
-					addVertex(Vec3(x, y, z));
+					vertexes.push_back(Vec3(x, y, z));
 
 				}
 				else if (!line.compare(0, 2, "f "))
@@ -46,19 +48,14 @@ class Object
 					iss >> trash;
 					while (iss >> idx >> trash >> itrash >> trash >> itrash)
 					{
-						idx--;
-						polygon.push_back(vertexes[idx]);
+						polygon.push_back(vertexes[idx - 1]);
 					}
 					addPolygon(Polygon(polygon[0], polygon[1], polygon[2]));
 				}
 			}
-			cerr << "v " << vertexesCount() << "t "  << polygonsCount() << endl;
+			qDebug() << "v " << vertexes.size() << "t "  << polygonsCount() << endl;
 		}
 
-		void addVertex(Vec3 vertex)
-		{
-			vertexes.push_back(vertex);
-		}
 
 		void addPolygon(Polygon polygon)
 		{
@@ -68,11 +65,6 @@ class Object
 		Polygon& polygon(size_t index)
 		{
 			return polygons[index];
-		}
-
-		size_t vertexesCount()
-		{
-			return vertexes.size();
 		}
 
 		size_t polygonsCount()

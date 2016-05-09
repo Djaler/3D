@@ -1,6 +1,7 @@
 #pragma once
 
-#include <iostream>
+#include <QDebug>
+#include <QtMath>
 #include "vector.h"
 
 class Mat4
@@ -10,22 +11,23 @@ class Mat4
 	public:
 		Mat4() : m
 		{
-			0, 0, 0, 0,
-			0, 0, 0, 0,
-			0, 0, 0, 0,
-			0, 0, 0, 0
-		} { }
+					 0, 0, 0, 0,
+					 0, 0, 0, 0,
+					 0, 0, 0, 0,
+					 0, 0, 0, 0
+		} {}
 
-		Mat4 operator *(const Mat4 &other) const
+		Mat4 operator*(const Mat4 &other) const
 		{
 			Mat4 result;
+
 			for(int i = 0; i < 4; i++)
 			{
 				for(int j = 0 ; j < 4; j++)
 				{
 					for(int k = 0; k < 4; k++)
 					{
-						result.m[i + j * 4] += m[i + k * 4] * other.m[k + j * 4];
+						result.m[j + i * 4] += other.m[k + i * 4] * m[j + k * 4];
 					}
 				}
 			}
@@ -57,7 +59,7 @@ class Mat4
 			return result;
 		}
 
-		float &operator[](int i)
+		float& operator[](int i)
 		{
 			return m[i];
 		}
@@ -76,27 +78,32 @@ class Mat4
 
 		static Mat4 rotate(float xAngle = 0.0f, float yAngle = 0.0f, float zAngle = 0.0f)
 		{
-			xAngle *= M_PI / 180;
+			float radians = qDegreesToRadians(xAngle);
+			float sine = sin(radians);
+			float cosine = cos(radians);
 			Mat4 x = Mat4::identity();
-			x[1 + 1 * 4] = cos(xAngle);
-			x[2 + 1 * 4] = sin(xAngle);
-			x[1 + 2 * 4] = -sin(xAngle);
-			x[2 + 2 * 4] = cos(xAngle);
+			x[1 + 1 * 4] = cosine;
+			x[2 + 1 * 4] = sine;
+			x[1 + 2 * 4] = -sine;
+			x[2 + 2 * 4] = cosine;
 
-			yAngle *= M_PI / 180;
+			radians = qDegreesToRadians(yAngle);
+			sine = sin(radians);
+			cosine = cos(radians);
 			Mat4 y = Mat4::identity();
-			y[0 + 0 * 4] = cos(yAngle);
-			y[2 + 0 * 4] = -sin(yAngle);
-			y[0 + 2 * 4] = sin(yAngle);
-			y[2 + 2 * 4] = cos(yAngle);
+			y[0 + 0 * 4] = cosine;
+			y[2 + 0 * 4] = -sine;
+			y[0 + 2 * 4] = sine;
+			y[2 + 2 * 4] = cosine;
 
-			zAngle *= M_PI / 180;
+			radians = qDegreesToRadians(zAngle);
+			sine = sin(radians);
+			cosine = cos(radians);
 			Mat4 z = Mat4::identity();
-			z[0 + 0 * 4] = cos(zAngle);
-			z[1 + 0 * 4] = sin(zAngle);
-			z[0 + 1 * 4] = -sin(zAngle);
-			z[1 + 1 * 4] = cos(zAngle);
-
+			z[0 + 0 * 4] = cosine;
+			z[1 + 0 * 4] = sine;
+			z[0 + 1 * 4] = -sine;
+			z[1 + 1 * 4] = cosine;
 
 			return z * y * x;
 		}
@@ -104,18 +111,22 @@ class Mat4
 		static Mat4 translate(float x = 0.0f, float y = 0.0f, float z = 0.0f)
 		{
 			Mat4 translate = Mat4::identity();
+
 			translate[0 + 3 * 4] = x;
 			translate[1 + 3 * 4] = y;
 			translate[2 + 3 * 4] = z;
+
 			return translate;
 		}
 
 		static Mat4 scale(float x = 1.0f, float y = 1.0f, float z = 1.0f)
 		{
 			Mat4 scale = Mat4::identity();
+
 			scale[0 + 0 * 4] = x;
 			scale[1 + 1 * 4] = y;
 			scale[2 + 2 * 4] = z;
+
 			return scale;
 		}
 
@@ -126,6 +137,7 @@ class Mat4
 			Vec3 upVector = Vec3::crossProduct(forward, side);
 
 			Mat4 lookAt = Mat4::identity();
+
 			lookAt[0 + 0 * 4] = side.x;
 			lookAt[1 + 0 * 4] = upVector.x;
 			lookAt[2 + 0 * 4] = forward.x;
@@ -142,7 +154,6 @@ class Mat4
 			lookAt[1 + 3 * 4] = -Vec3::dotProduct(upVector, eye);
 			lookAt[2 + 3 * 4] = -Vec3::dotProduct(forward, eye);
 
-
 			return lookAt;
 		}
 
@@ -152,9 +163,9 @@ class Mat4
 			{
 				for(int j = 0; j < 4; j++)
 				{
-					cerr<<m[j + i * 4]<<" ";
+					qDebug() << m[j + i * 4] << " ";
 				}
-				cerr<<endl;
+				qDebug() << endl;
 			}
 		}
 };

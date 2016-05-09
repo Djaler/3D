@@ -15,7 +15,7 @@ class MainWindow : public QWidget
 		void center();
 
 		void initModel();
-		void drawTriangle(Vec3 v1, Vec3 v2, Vec3 v3, QColor color, QImage *image, float *zBuffer, float translateX, float translateY);
+		void drawTriangle(Vec3 v1, Vec3 v2, Vec3 v3, QColor color, QImage *image, float *zBuffer);
 
 		int width;
 		int height;
@@ -24,9 +24,9 @@ class MainWindow : public QWidget
 		int numCores;
 
 		QLabel *drawArea;
+		QLabel *fpsMeter;
 		QSlider *verticalBar;
 		QSlider *horizontalBar;
-		QLabel *fpsMeter;
 
 	private slots:
 		void redraw();

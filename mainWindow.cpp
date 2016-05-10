@@ -1,6 +1,7 @@
 #include <omp.h>
 #include "mainWindow.h"
 #include "matrix.h"
+#include "drawing.h"
 
 using namespace std;
 
@@ -19,18 +20,20 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent)
 
 void MainWindow::initModel()
 {
-	//object = new Object("../obj/diablo3_pose.obj");
+	object = new Object("../obj/diablo3_pose.obj");
+	object->setScale(width / 2, width / 2, width / 2);
+	object->setRotate(0, 180, 0);
 	//object = Object("../obj/Millennium_Falcon.obj");
 	//object = new Object("../obj/reconstructed_head.obj");
 
-	object = new Object();
+	/*object = new Object();
 	Vec3 v1(0, 0, 0);
 	Vec3 v2(0, 1, 0);
 	Vec3 v3(0, 0, 1);
 	Vec3 v4(1, 0, 0);
 
 	object->addPolygon(Polygon(v1, v2, v3));
-	object->addPolygon(Polygon(v1, v3, v4));
+	object->addPolygon(Polygon(v1, v3, v4));*/
 }
 
 void MainWindow::initUI()
@@ -45,8 +48,8 @@ void MainWindow::initUI()
 	horizontalLayout->addWidget(drawArea);
 
 	verticalBar = new QSlider(Qt::Vertical);
-	verticalBar->setMinimum(-180);
-	verticalBar->setMaximum(180);
+	verticalBar->setMinimum(-89);
+	verticalBar->setMaximum(89);
 	verticalBar->setValue(0);
 
 	connect(verticalBar, SIGNAL(valueChanged(int)), this, SLOT(redraw()));
@@ -72,46 +75,6 @@ void MainWindow::initUI()
 	show();
 }
 
-void MainWindow::drawTriangle(Vec3 v1, Vec3 v2, Vec3 v3, QColor color, QImage *image, float *zBuffer)
-{
-	int translateX = width / 2;
-	int translateY = height / 2;
-	v1 += Vec3(translateX, translateY);
-	v2 += Vec3(translateX, translateY);
-	v3 += Vec3(translateX, translateY);
-
-	int minX = max(0.0f, ceil(min(v1.x, min(v2.x, v3.x))));
-	int maxX = min(width - 1.0f, floor(max(v1.x, max(v2.x, v3.x))));
-	int minY = max(0.0f, ceil(min(v1.y, min(v2.y, v3.y))));
-	int maxY = min(height - 1.0f, floor(max(v1.y, max(v2.y, v3.y))));
-
-	float triangleArea = (v1.y - v3.y) * (v2.x - v3.x) + (v2.y - v3.y) * (v3.x - v1.x);
-
-	QRgb *rowData = (QRgb*)image->scanLine(minY);
-	int stride = image->bytesPerLine() / 4;
-	for (int y = minY; y <= maxY; y++, rowData += stride)
-	{
-		QRgb *line = rowData + minX;
-		for (int x = minX; x <= maxX; x++, line++)
-		{
-			float b1 = ((y - v3.y) * (v2.x - v3.x) + (v2.y - v3.y) * (v3.x - x)) / triangleArea;
-			float b2 = ((y - v1.y) * (v3.x - v1.x) + (v3.y - v1.y) * (v1.x - x)) / triangleArea;
-			float b3 = ((y - v2.y) * (v1.x - v2.x) + (v1.y - v2.y) * (v2.x - x)) / triangleArea;
-
-			if (b1 >= 0 && b1 <= 1 && b2 >= 0 && b2 <= 1 && b3 >= 0 && b3 <= 1)
-			{
-				float depth = b1 * v1.z + b2 * v2.z + b3 * v3.z;
-				int zIndex = y * width + x;
-				if (zBuffer[zIndex] > depth)
-				{
-					*line = color.rgb();
-					zBuffer[zIndex] = depth;
-				}
-			}
-		}
-	}
-}
-
 void MainWindow::redraw()
 {
 	QTime time;
@@ -121,10 +84,6 @@ void MainWindow::redraw()
 	image.fill(QColor(0, 0, 0));
 
 	Mat4 rotate = Mat4::rotate(verticalBar->value(), horizontalBar->value());
-
-	Mat4 scale = Mat4::scale(width/2, width/2, width/2);
-
-	Mat4 translate = Mat4::identity();
 
 	float zBuffer[width * height];
 	for(int i = 0; i < width * height; i++)
@@ -138,22 +97,20 @@ void MainWindow::redraw()
 
 	Mat4 view = Mat4::lookAt(eye, center, Vec3(0, 1, 0));
 
-	Mat4 model = scale * translate;// * rotate;
-
 	#pragma omp parallel for num_threads(numCores)
 	for(size_t i = 0; i < object->polygonsCount(); i++)
 	{
 		Polygon polygon = object->polygon(i);
 		Vec4 v1 = polygon.v1.toVec4();
-		v1 = model * v1;
+		v1 = object->model() * v1;
 		v1 = view * v1;
 
 		Vec4 v2 = polygon.v2.toVec4();
-		v2 = model * v2;
+		v2 = object->model() * v2;
 		v2 = view * v2;
 
 		Vec4 v3 = polygon.v3.toVec4();
-		v3 = model * v3;
+		v3 = object->model() * v3;
 		v3 = view * v3;
 
 		Vec3 v1_3 = v1.toVec3();
@@ -165,7 +122,7 @@ void MainWindow::redraw()
 		float intensity = abs(norm.z);
 		QColor color(intensity * 255, intensity * 255, intensity * 255);
 
-		drawTriangle(v1_3, v2_3, v3_3, color, &image, zBuffer);
+		drawTriangle(v1_3, v2_3, v3_3, color, &image, zBuffer, width, height);
 
 	}
 	drawArea->setPixmap(QPixmap::fromImage(image.mirrored()));

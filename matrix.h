@@ -1,8 +1,10 @@
 #pragma once
 
-#include <QDebug>
+#include <iostream>
 #include <QtMath>
 #include "vector.h"
+
+using namespace std;
 
 class Mat4
 {
@@ -163,9 +165,9 @@ class Mat4
 			{
 				for(int j = 0; j < 4; j++)
 				{
-					qDebug() << m[j + i * 4] << " ";
+					cerr << m[j + i * 4] << " ";
 				}
-				qDebug() << endl;
+				cerr << endl;
 			}
 		}
 };

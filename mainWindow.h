@@ -15,7 +15,6 @@ class MainWindow : public QWidget
 		void center();
 
 		void initModel();
-		void drawTriangle(Vec3 v1, Vec3 v2, Vec3 v3, QColor color, QImage *image, float *zBuffer);
 
 		int width;
 		int height;

@@ -2,9 +2,10 @@
 
 #include <fstream>
 #include <sstream>
-#include <QDebug>
+#include <iostream>
 #include <vector>
 #include "vector.h"
+#include "matrix.h"
 #include "polygon.h"
 
 using namespace std;
@@ -12,11 +13,24 @@ using namespace std;
 class Object
 {
 	vector<Polygon> polygons;
+	float xRotate, yRotate, zRotate;
+	float xTranslate, yTranslate, zTranslate;
+	float xScale, yScale, zScale;
+
+	Mat4 rotate, translate, scale, _model;
 
 	public:
-		Object() : polygons() {}
+		Object() : polygons()
+		{
+			xRotate = yRotate = zRotate = xTranslate = yTranslate = zTranslate = 0;
+			xScale = yScale = zScale = 1;
 
-		Object(const char *filename) : polygons()
+			rotate = Mat4::rotate(xRotate, yRotate, zRotate);
+			scale = Mat4::scale(xScale, yScale, zScale);
+			translate = Mat4::translate(xTranslate, yTranslate, zTranslate);
+		}
+
+		Object(const char *filename) : Object()
 		{
 			vector<Vec3> vertexes;
 			ifstream in;
@@ -53,7 +67,7 @@ class Object
 					addPolygon(Polygon(polygon[0], polygon[1], polygon[2]));
 				}
 			}
-			qDebug() << "v " << vertexes.size() << "t "  << polygonsCount() << endl;
+			cerr << "v " << vertexes.size() << " p "  << polygonsCount() << endl;
 		}
 
 
@@ -71,4 +85,45 @@ class Object
 		{
 			return polygons.size();
 		}
+
+		void setScale(float xScale, float yScale, float zScale)
+		{
+			this->xScale = xScale;
+			this->yScale = yScale;
+			this->zScale = zScale;
+
+			scale = Mat4::scale(xScale, yScale, zScale);
+			updateModel();
+		}
+
+		void setTranslate(float xTranslate, float yTranslate, float zTranslate)
+		{
+			this->xTranslate = xTranslate;
+			this->yTranslate = yTranslate;
+			this->zTranslate = zTranslate;
+
+			translate = Mat4::translate(xTranslate, yTranslate, zTranslate);
+			updateModel();
+		}
+
+		void setRotate(float xRotate, float yRotate, float zRotate)
+		{
+			this->xRotate = xRotate;
+			this->yRotate = yRotate;
+			this->zRotate = zRotate;
+
+			rotate = Mat4::rotate(xRotate, yRotate, zRotate);
+			updateModel();
+		}
+
+		void updateModel()
+		{
+			 _model = rotate * scale * translate;
+		}
+
+		Mat4 model()
+		{
+			return _model;
+		}
+
 };

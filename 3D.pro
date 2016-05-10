@@ -19,8 +19,9 @@ HEADERS  += \
 	matrix.h \
 	mainWindow.h \
 	vector.h \
-    object.h \
-    polygon.h
+	object.h \
+	polygon.h \
+	drawing.h
 
 
 QMAKE_LFLAGS += -fopenmp

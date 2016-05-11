@@ -91,6 +91,7 @@ void MainWindow::redraw()
 		zBuffer[i] = numeric_limits<int>::max();
 	}
 
+	Vec3 light(0,0,-1);
 	Vec3 eye(0, 0, -500);
 	Vec3 center(0, 0, 0);
 	eye = rotate * eye;
@@ -119,10 +120,13 @@ void MainWindow::redraw()
 
 		Vec3 norm = Vec3::normal(v1_3, v2_3, v3_3);
 
-		float intensity = abs(norm.z);
-		QColor color(intensity * 255, intensity * 255, intensity * 255);
+		float intensity = Vec3::dotProduct(norm, light);
+		if(intensity > 0)
+		{
+			QColor color(intensity * 255, intensity * 255, intensity * 255);
 
-		drawTriangle(v1_3, v2_3, v3_3, color, &image, zBuffer, width, height);
+			drawTriangle(v1_3, v2_3, v3_3, color, &image, zBuffer, width, height);
+		}
 
 	}
 	drawArea->setPixmap(QPixmap::fromImage(image.mirrored()));

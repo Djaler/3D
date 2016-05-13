@@ -118,7 +118,7 @@ class Object
 
 		void updateModel()
 		{
-			 _model = rotate * scale * translate;
+			 _model = translate * rotate * scale;
 		}
 
 		Mat4 model()

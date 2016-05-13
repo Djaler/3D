@@ -5,12 +5,6 @@
 
 void drawTriangle(Vec3 v1, Vec3 v2, Vec3 v3, QColor color, QImage *image, float *zBuffer, int width, int height)
 {
-	int translateX = width / 2;
-	int translateY = height / 2;
-	v1 += Vec3(translateX, translateY);
-	v2 += Vec3(translateX, translateY);
-	v3 += Vec3(translateX, translateY);
-
 	int minX = max(0.0f, ceil(min(v1.x, min(v2.x, v3.x))));
 	int maxX = min(width - 1.0f, floor(max(v1.x, max(v2.x, v3.x))));
 	int minY = max(0.0f, ceil(min(v1.y, min(v2.y, v3.y))));

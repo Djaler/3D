@@ -132,10 +132,10 @@ class Mat4
 			return scale;
 		}
 
-		static Mat4 lookAt(const Vec3& eye, const Vec3& center, const Vec3& up)
+		static Mat4 lookAt(const Vec3& eye, const Vec3& center)
 		{
 			Vec3 forward = (center - eye).normalized();
-			Vec3 side = Vec3::crossProduct(up, forward).normalized();
+			Vec3 side = Vec3::crossProduct(Vec3(0, 1, 0), forward).normalized();
 			Vec3 upVector = Vec3::crossProduct(forward, side);
 
 			Mat4 lookAt = Mat4::identity();
@@ -157,6 +157,34 @@ class Mat4
 			lookAt[2 + 3 * 4] = -Vec3::dotProduct(forward, eye);
 
 			return lookAt;
+		}
+
+		static Mat4 perspective(float fov, float aspect, float near, float far)
+		{
+			Mat4 perspective;
+
+			float yScale = 1 / tan(qDegreesToRadians(fov / 2));
+			float xScale = yScale / aspect;
+
+			perspective[0 + 0 * 4] = xScale;
+			perspective[1 + 1 * 4] = yScale;
+			perspective[2 + 2 * 4] = far / (far - near);
+			perspective[3 + 2 * 4] = 1;
+			perspective[2 + 3 * 4] = -near * far / (far - near);
+
+			return perspective;
+		}
+
+		static Mat4 viewport(float width, float height)
+		{
+			Mat4 viewport = Mat4::identity();
+
+			viewport[0 + 0 * 4] = width / 2;
+			viewport[0 + 3 * 4] = width / 2;
+			viewport[1 + 1 * 4] = height / 2;
+			viewport[1 + 3 * 4] = height / 2;
+
+			return viewport;
 		}
 
 		void print()

@@ -2,6 +2,7 @@
 #include "mainWindow.h"
 #include "matrix.h"
 #include "drawing.h"
+#include "camera.h"
 
 using namespace std;
 
@@ -22,9 +23,13 @@ void MainWindow::initModel()
 {
 	object = new Object("../obj/diablo3_pose.obj");
 	object->setScale(width / 2, width / 2, width / 2);
+	object->setTranslate(0, 0, 0);
 	object->setRotate(0, 180, 0);
-	//object = Object("../obj/Millennium_Falcon.obj");
-	//object = new Object("../obj/reconstructed_head.obj");
+	/*object = new Object("../obj/Millennium_Falcon.obj");
+	object->setTranslate(0, -50, 0);
+	object->setRotate(0, 180, 0);*/
+	/*object = new Object("../obj/reconstructed_head.obj");
+	object->setRotate(0, 180, 0);*/
 
 	/*object = new Object();
 	Vec3 v1(0, 0, 0);
@@ -33,7 +38,9 @@ void MainWindow::initModel()
 	Vec3 v4(1, 0, 0);
 
 	object->addPolygon(Polygon(v1, v2, v3));
-	object->addPolygon(Polygon(v1, v3, v4));*/
+	object->addPolygon(Polygon(v1, v3, v4));
+
+	object->setScale(width / 2, width / 2, width / 2);*/
 }
 
 void MainWindow::initUI()
@@ -83,8 +90,6 @@ void MainWindow::redraw()
 	QImage image = QImage(width, height, QImage::Format_RGB32);
 	image.fill(QColor(0, 0, 0));
 
-	Mat4 rotate = Mat4::rotate(verticalBar->value(), horizontalBar->value());
-
 	float zBuffer[width * height];
 	for(int i = 0; i < width * height; i++)
 	{
@@ -92,13 +97,16 @@ void MainWindow::redraw()
 	}
 
 	Vec3 light(0, 0, -1);
-	Vec3 eye(0, 0, -500);
+	Vec3 eye(0, 0, -400);
 	Vec3 center(0, 0, 0);
-	eye = rotate * eye;
 
-	Mat4 view = Mat4::lookAt(eye, center, Vec3(0, 1, 0));
+	Camera camera(eye, center, light);
+	camera.rotateAroundCenter(verticalBar->value(), horizontalBar->value());
 
-	light = view * light;
+	Mat4 view = camera.view();
+
+	Mat4 projection = Mat4::perspective(90, width / height, 0.1, 1000);
+	Mat4 viewport = Mat4::viewport(width, height);
 
 	#pragma omp parallel for num_threads(numCores)
 	for(size_t i = 0; i < object->polygonsCount(); i++)
@@ -116,18 +124,20 @@ void MainWindow::redraw()
 		v3 = object->model() * v3;
 		v3 = view * v3;
 
-		Vec3 v1_3 = v1.toVec3();
-		Vec3 v2_3 = v2.toVec3();
-		Vec3 v3_3 = v3.toVec3();
-
-		Vec3 norm = Vec3::normal(v1_3, v2_3, v3_3);
-
-		float intensity = Vec3::dotProduct(norm, light);
+		Vec3 norm = Vec3::normal(v1.toVec3(), v2.toVec3(), v3.toVec3());
+		float intensity = Vec3::dotProduct(norm, camera.light());
 		if(intensity > 1) intensity = 1;
 		else if(intensity < 0) intensity = 0;
 		QColor color(intensity * 255, intensity * 255, intensity * 255);
 
-		drawTriangle(v1_3, v2_3, v3_3, color, &image, zBuffer, width, height);
+		v1 = projection * v1;
+		v1 = viewport * v1;
+		v2 = projection * v2;
+		v2 = viewport * v2;
+		v3 = projection * v3;
+		v3 = viewport * v3;
+
+		drawTriangle(v1.toVec3(), v2.toVec3(), v3.toVec3(), color, &image, zBuffer, width, height);
 	}
 	drawArea->setPixmap(QPixmap::fromImage(image.mirrored()));
 

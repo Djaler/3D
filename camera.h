@@ -55,12 +55,24 @@ class Camera
 
 		void rotateAroundCenter(float xRotate, float yRotate)
 		{
-			Vec4 eye4 = _eye.toVec4();
-			eye4 = Mat4::translate(-_center.x, -_center.y, -_center.z) * eye4;
-			eye4 = Mat4::rotate(xRotate, yRotate) * eye4;
-			eye4 = Mat4::translate(_center.x, _center.y, _center.z) * eye4;
+			Vec3 camera = _eye - _center;
+			float r = camera.length();
+			float O = acos(camera.y / r);
+			float f = atan(camera.z / camera.x);
 
-			_eye = eye4.toVec3();
+			if(_center.x > 0)
+			{
+				yRotate += 180;
+			}
+
+			f += qDegreesToRadians(yRotate);
+			O += qDegreesToRadians(xRotate);
+
+			camera.x = r * sin(O) * cos(f);
+			camera.y = r * cos(O);
+			camera.z = r * sin(O) * sin(f);
+
+			_eye = camera + _center;
 
 			calculateView();
 		}

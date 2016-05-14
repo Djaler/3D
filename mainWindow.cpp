@@ -3,6 +3,7 @@
 #include "matrix.h"
 #include "drawing.h"
 #include "camera.h"
+#include "booth.h"
 
 using namespace std;
 
@@ -21,26 +22,17 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent)
 
 void MainWindow::initModel()
 {
-	object = new Object("../obj/diablo3_pose.obj");
+	/*object = new Object("../obj/diablo3_pose.obj");
 	object->setScale(width / 2, width / 2, width / 2);
-	object->setTranslate(0, 0, 0);
-	object->setRotate(0, 180, 0);
+	object->setRotate(0, 180, 0);*/
 	/*object = new Object("../obj/Millennium_Falcon.obj");
 	object->setTranslate(0, -50, 0);
 	object->setRotate(0, 180, 0);*/
 	/*object = new Object("../obj/reconstructed_head.obj");
 	object->setRotate(0, 180, 0);*/
 
-	/*object = new Object();
-	Vec3 v1(0, 0, 0);
-	Vec3 v2(0, 1, 0);
-	Vec3 v3(0, 0, 1);
-	Vec3 v4(1, 0, 0);
-
-	object->addPolygon(Polygon(v1, v2, v3));
-	object->addPolygon(Polygon(v1, v3, v4));
-
-	object->setScale(width / 2, width / 2, width / 2);*/
+	Booth booth(200, 500, 180, 480);
+	object = booth.getObject();
 }
 
 void MainWindow::initUI()
@@ -97,7 +89,7 @@ void MainWindow::redraw()
 	}
 
 	Vec3 light(0, 0, -1);
-	Vec3 eye(0, 0, -400);
+	Vec3 eye(0, 0, -600);
 	Vec3 center(0, 0, 0);
 
 	Camera camera(eye, center, light);
@@ -125,9 +117,12 @@ void MainWindow::redraw()
 		v3 = view * v3;
 
 		Vec3 norm = Vec3::normal(v1.toVec3(), v2.toVec3(), v3.toVec3());
-		float intensity = Vec3::dotProduct(norm, camera.light());
-		if(intensity > 1) intensity = 1;
-		else if(intensity < 0) intensity = 0;
+		float intensity = abs(Vec3::dotProduct(norm, camera.light()));
+
+		if(intensity > 1)
+		{
+			intensity = 1;
+		}
 		QColor color(intensity * 255, intensity * 255, intensity * 255);
 
 		v1 = projection * v1;

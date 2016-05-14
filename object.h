@@ -28,6 +28,8 @@ class Object
 			rotate = Mat4::rotate(xRotate, yRotate, zRotate);
 			scale = Mat4::scale(xScale, yScale, zScale);
 			translate = Mat4::translate(xTranslate, yTranslate, zTranslate);
+
+			_model = Mat4::identity();
 		}
 
 		Object(const char *filename) : Object()

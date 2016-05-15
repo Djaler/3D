@@ -9,7 +9,7 @@ class Tardis
 	float lanternRadius, lanternHeight;
 	float edgeWidth, edgeHeight;
 	float septumWidth; int septumCount;
-	Object *tardis;
+	Object tardis;
 
 	public:
 		Tardis(float width, float height, float recessWidth, float recessHeight,
@@ -38,7 +38,7 @@ class Tardis
 			initEdge();
 		}
 
-		Object* getObject()
+		Object getObject()
 		{
 			return tardis;
 		}
@@ -61,7 +61,6 @@ class Tardis
 			Vec3 t3(right, top, back);
 			Vec3 t4(right, top, front);
 
-			tardis = new Object();
 			initBox(t1, t2, t3, t4, b1, b2, b3, b4);
 
 			initCorners(t1, t2, t3, t4, b1, b2, b3, b4);
@@ -190,7 +189,7 @@ class Tardis
 					z = lanternRadius * cos(j * stepO);
 					Vec3 v3(x, y, z);
 
-					tardis->addPolygon(Polygon(v1, v2, v3));
+					tardis.addPolygon(Polygon(v1, v2, v3));
 
 					x = lanternRadius * sin((j - 1) * stepO) * cos(i * stepF);
 					y = lanternRadius * sin((j - 1) * stepO) * sin(i * stepF) + bottom;
@@ -202,7 +201,7 @@ class Tardis
 					z = lanternRadius * cos(j * stepO);
 					v3 = Vec3(x, y, z);
 
-					tardis->addPolygon(Polygon(v1, v2, v3));
+					tardis.addPolygon(Polygon(v1, v2, v3));
 				}
 			}
 		}
@@ -227,10 +226,10 @@ class Tardis
 				z = lanternRadius * sin((i+1) * step);
 				Vec3 next_t(x, top, z);
 				Vec3 next_b(x, bottom, z);
-				tardis->addPolygon(Polygon(center_t, current_t, next_t));
-				tardis->addPolygon(Polygon(center_b, current_b, next_b));
-				tardis->addPolygon(Polygon(current_t, next_t, current_b));
-				tardis->addPolygon(Polygon(current_b, next_b, next_t));
+				tardis.addPolygon(Polygon(center_t, current_t, next_t));
+				tardis.addPolygon(Polygon(center_b, current_b, next_b));
+				tardis.addPolygon(Polygon(current_t, next_t, current_b));
+				tardis.addPolygon(Polygon(current_b, next_b, next_t));
 			}
 
 
@@ -389,22 +388,22 @@ class Tardis
 
 		void initBox(Vec3 t1, Vec3 t2, Vec3 t3, Vec3 t4, Vec3 b1, Vec3 b2, Vec3 b3, Vec3 b4)
 		{
-			tardis->addPolygon(Polygon(t1, t2, t3));
-			tardis->addPolygon(Polygon(t1, t4, t3));
+			tardis.addPolygon(Polygon(t1, t2, t3));
+			tardis.addPolygon(Polygon(t1, t4, t3));
 
-			tardis->addPolygon(Polygon(t3, b3, b4));
-			tardis->addPolygon(Polygon(t3, t4, b4));
+			tardis.addPolygon(Polygon(t3, b3, b4));
+			tardis.addPolygon(Polygon(t3, t4, b4));
 
-			tardis->addPolygon(Polygon(t1, b1, t4));
-			tardis->addPolygon(Polygon(b4, b1, t4));
+			tardis.addPolygon(Polygon(t1, b1, t4));
+			tardis.addPolygon(Polygon(b4, b1, t4));
 
-			tardis->addPolygon(Polygon(t1, b1, t2));
-			tardis->addPolygon(Polygon(b2, b1, t2));
+			tardis.addPolygon(Polygon(t1, b1, t2));
+			tardis.addPolygon(Polygon(b2, b1, t2));
 
-			tardis->addPolygon(Polygon(t2, b2, t3));
-			tardis->addPolygon(Polygon(b3, b2, t3));
+			tardis.addPolygon(Polygon(t2, b2, t3));
+			tardis.addPolygon(Polygon(b3, b2, t3));
 
-			tardis->addPolygon(Polygon(b1, b2, b3));
-			tardis->addPolygon(Polygon(b1, b4, b3));
+			tardis.addPolygon(Polygon(b1, b2, b3));
+			tardis.addPolygon(Polygon(b1, b4, b3));
 		}
 };

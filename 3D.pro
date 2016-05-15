@@ -23,8 +23,11 @@ HEADERS  += \
 	polygon.h \
 	drawing.h \
     camera.h \
-    tardis.h
+    tardis.h \
+    addwidget.h
 
 
 QMAKE_LFLAGS += -fopenmp
 QMAKE_CXXFLAGS += -fopenmp
+
+FORMS +=

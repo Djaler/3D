@@ -15,12 +15,10 @@ class MainWindow : public QWidget
 		void initUI();
 		void center();
 
-		void initModel();
-
 		int width;
 		int height;
 
-		Object *object;
+		vector<Object> *objects;
 		Camera *camera;
 		int numCores;
 
@@ -29,6 +27,9 @@ class MainWindow : public QWidget
 		QSlider *verticalBar;
 		QSlider *horizontalBar;
 
+		QPushButton *addButton;
+
 	private slots:
 		void redraw();
+		void add();
 };

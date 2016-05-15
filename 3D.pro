@@ -23,7 +23,7 @@ HEADERS  += \
 	polygon.h \
 	drawing.h \
     camera.h \
-    booth.h
+    tardis.h
 
 
 QMAKE_LFLAGS += -fopenmp

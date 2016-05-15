@@ -2,7 +2,7 @@
 #include "mainWindow.h"
 #include "matrix.h"
 #include "drawing.h"
-#include "booth.h"
+#include "tardis.h"
 
 using namespace std;
 
@@ -19,11 +19,8 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent)
 	Vec3 eye(0, 0, -600);
 	Vec3 center(0, 0, 0);
 
-	camera = new Camera(eye, center);
+	camera = new Camera(eye, center, 90, width, height, 0.1, 1000);
 	verticalBar->setValue(90 - camera->xRotate());
-
-	projection = Mat4::perspective(90, width / height, 0.1, 1000);
-	viewport = Mat4::viewport(width, height);
 
 	redraw();
 }
@@ -39,7 +36,7 @@ void MainWindow::initModel()
 	/*object = new Object("../obj/reconstructed_head.obj");
 	object->setRotate(0, 180, 0);*/
 
-	Booth booth(200, 500, 180, 480);
+	Tardis booth(200, 500, 180, 480, 180, 30, 10, 20, 30, 220, 10, 20, 3);
 	object = booth.getObject();
 }
 
@@ -101,7 +98,7 @@ void MainWindow::redraw()
 	Mat4 view = camera->view();
 
 	Mat4 modelView = view * object->model();
-	Mat4 projectionViewport = viewport * projection;
+	Mat4 projectionViewport = camera->projectionViewport();
 
 	#pragma omp parallel for num_threads(numCores)
 	for(size_t i = 0; i < object->polygonsCount(); i++)
@@ -109,18 +106,13 @@ void MainWindow::redraw()
 		Polygon polygon = object->polygon(i);
 
 		Vec4 v1 = modelView * polygon.v1.toVec4();
-
 		Vec4 v2 = modelView * polygon.v2.toVec4();
-
 		Vec4 v3 = modelView * polygon.v3.toVec4();
 
 		Vec3 norm = Vec3::normal(v1.toVec3(), v2.toVec3(), v3.toVec3());
 		float intensity = abs(Vec3::dotProduct(norm, Vec3(0, 0, -1)));
 
-		if(intensity > 1)
-		{
-			intensity = 1;
-		}
+		if(intensity > 1) intensity = 1;
 
 		v1 = projectionViewport * v1;
 		v2 = projectionViewport * v2;

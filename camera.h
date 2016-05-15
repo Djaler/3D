@@ -8,16 +8,18 @@ class Camera
 	Vec3 _eye;
 	Vec3 _center;
 	Mat4 _view;
+	Mat4 _projectionViewport;
 
 	public:
-		Camera(Vec3 eye, Vec3 center) : _eye(eye), _center(center)
+		Camera(Vec3 eye, Vec3 center, float fov, float width, float height, float near, float far) : _eye(eye), _center(center)
 		{
 			calculateView();
+			calculateProjectionViewport(fov, width, height, near, far);
 		}
 
-		void calculateView()
+		Mat4 projectionViewport()
 		{
-			_view = Mat4::lookAt(_eye, _center);
+			return _projectionViewport;
 		}
 
 		Vec3 eye()
@@ -69,6 +71,20 @@ class Camera
 		{
 			Vec3 camera = _eye - _center;
 			return qRadiansToDegrees(acos(camera.y / camera.length()));
+		}
+
+	private:
+		void calculateProjectionViewport(float fov, float width, float height, float near, float far)
+		{
+			Mat4 projection = Mat4::perspective(fov, width / height, near, far);
+			Mat4 viewport = Mat4::viewport(width, height);
+
+			_projectionViewport = viewport * projection;
+		}
+
+		void calculateView()
+		{
+			_view = Mat4::lookAt(_eye, _center);
 		}
 
 };

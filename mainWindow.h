@@ -22,8 +22,6 @@ class MainWindow : public QWidget
 
 		Object *object;
 		Camera *camera;
-		Mat4 projection;
-		Mat4 viewport;
 		int numCores;
 
 		QLabel *drawArea;

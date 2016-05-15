@@ -7,11 +7,10 @@ class Camera
 {
 	Vec3 _eye;
 	Vec3 _center;
-	Vec3 _light;
 	Mat4 _view;
 
 	public:
-		Camera(Vec3 eye, Vec3 center, Vec3 light) : _eye(eye), _center(center), _light(light)
+		Camera(Vec3 eye, Vec3 center) : _eye(eye), _center(center)
 		{
 			calculateView();
 		}
@@ -29,11 +28,6 @@ class Camera
 		Vec3 center()
 		{
 			return _center;
-		}
-
-		Vec3 light()
-		{
-			return _light;
 		}
 
 		Mat4 view()
@@ -65,16 +59,21 @@ class Camera
 				yRotate += 180;
 			}
 
-			f += qDegreesToRadians(yRotate);
-			O += qDegreesToRadians(xRotate);
+			f = qDegreesToRadians(yRotate + 90);
+			O = qDegreesToRadians(xRotate - 90);
 
 			camera.x = r * sin(O) * cos(f);
 			camera.y = r * cos(O);
 			camera.z = r * sin(O) * sin(f);
 
 			_eye = camera + _center;
-
 			calculateView();
+		}
+
+		float xRotate()
+		{
+			Vec3 camera = _eye - _center;
+			return qRadiansToDegrees(acos(camera.y / camera.length()));
 		}
 
 };

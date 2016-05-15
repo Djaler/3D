@@ -2,6 +2,7 @@
 
 #include <QtWidgets>
 #include "object.h"
+#include "camera.h"
 
 class MainWindow : public QWidget
 {
@@ -20,6 +21,9 @@ class MainWindow : public QWidget
 		int height;
 
 		Object *object;
+		Camera *camera;
+		Mat4 projection;
+		Mat4 viewport;
 		int numCores;
 
 		QLabel *drawArea;

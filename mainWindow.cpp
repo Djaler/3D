@@ -2,7 +2,6 @@
 #include "mainWindow.h"
 #include "matrix.h"
 #include "drawing.h"
-#include "camera.h"
 #include "booth.h"
 
 using namespace std;
@@ -16,6 +15,15 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent)
 	numCores = omp_get_num_procs();
 
 	initModel();
+
+	Vec3 eye(0, 0, -600);
+	Vec3 center(0, 0, 0);
+
+	camera = new Camera(eye, center);
+	verticalBar->setValue(90 - camera->xRotate());
+
+	projection = Mat4::perspective(90, width / height, 0.1, 1000);
+	viewport = Mat4::viewport(width, height);
 
 	redraw();
 }
@@ -88,51 +96,37 @@ void MainWindow::redraw()
 		zBuffer[i] = numeric_limits<int>::max();
 	}
 
-	Vec3 light(0, 0, -1);
-	Vec3 eye(0, 0, -600);
-	Vec3 center(0, 0, 0);
+	camera->rotateAroundCenter(verticalBar->value(), horizontalBar->value());
 
-	Camera camera(eye, center, light);
-	camera.rotateAroundCenter(verticalBar->value(), horizontalBar->value());
+	Mat4 view = camera->view();
 
-	Mat4 view = camera.view();
-
-	Mat4 projection = Mat4::perspective(90, width / height, 0.1, 1000);
-	Mat4 viewport = Mat4::viewport(width, height);
+	Mat4 modelView = view * object->model();
+	Mat4 projectionViewport = viewport * projection;
 
 	#pragma omp parallel for num_threads(numCores)
 	for(size_t i = 0; i < object->polygonsCount(); i++)
 	{
 		Polygon polygon = object->polygon(i);
-		Vec4 v1 = polygon.v1.toVec4();
-		v1 = object->model() * v1;
-		v1 = view * v1;
 
-		Vec4 v2 = polygon.v2.toVec4();
-		v2 = object->model() * v2;
-		v2 = view * v2;
+		Vec4 v1 = modelView * polygon.v1.toVec4();
 
-		Vec4 v3 = polygon.v3.toVec4();
-		v3 = object->model() * v3;
-		v3 = view * v3;
+		Vec4 v2 = modelView * polygon.v2.toVec4();
+
+		Vec4 v3 = modelView * polygon.v3.toVec4();
 
 		Vec3 norm = Vec3::normal(v1.toVec3(), v2.toVec3(), v3.toVec3());
-		float intensity = abs(Vec3::dotProduct(norm, camera.light()));
+		float intensity = abs(Vec3::dotProduct(norm, Vec3(0, 0, -1)));
 
 		if(intensity > 1)
 		{
 			intensity = 1;
 		}
-		QColor color(intensity * 255, intensity * 255, intensity * 255);
 
-		v1 = projection * v1;
-		v1 = viewport * v1;
-		v2 = projection * v2;
-		v2 = viewport * v2;
-		v3 = projection * v3;
-		v3 = viewport * v3;
+		v1 = projectionViewport * v1;
+		v2 = projectionViewport * v2;
+		v3 = projectionViewport * v3;
 
-		drawTriangle(v1.toVec3(), v2.toVec3(), v3.toVec3(), color, &image, zBuffer, width, height);
+		drawTriangle(v1.toVec3(), v2.toVec3(), v3.toVec3(), intensity, &image, zBuffer, width, height);
 	}
 	drawArea->setPixmap(QPixmap::fromImage(image.mirrored()));
 

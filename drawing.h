@@ -3,8 +3,10 @@
 #include <QtWidgets>
 #include "vector.h"
 
-void drawTriangle(Vec3 v1, Vec3 v2, Vec3 v3, QColor color, QImage *image, float *zBuffer, int width, int height)
+void drawTriangle(Vec3 v1, Vec3 v2, Vec3 v3, float intensity, QImage *image, float *zBuffer, int width, int height)
 {
+	QColor color(0, 0, intensity * 255);
+
 	int minX = max(0.0f, ceil(min(v1.x, min(v2.x, v3.x))));
 	int maxX = min(width - 1.0f, floor(max(v1.x, max(v2.x, v3.x))));
 	int minY = max(0.0f, ceil(min(v1.y, min(v2.y, v3.y))));

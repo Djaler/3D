@@ -54,11 +54,6 @@ class Camera
 			float O = acos(camera.y / r);
 			float f = atan(camera.z / camera.x);
 
-			if(_center.x > 0)
-			{
-				yRotate += 180;
-			}
-
 			f = qDegreesToRadians(yRotate + 90);
 			O = qDegreesToRadians(xRotate - 90);
 

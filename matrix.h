@@ -18,5 +18,6 @@ class Mat4
 		static Mat4 scale(float x = 1.0f, float y = 1.0f, float z = 1.0f);
 		static Mat4 lookAt(const Vec3& eye, const Vec3& center);
 		static Mat4 perspective(float fov, float aspect, float near, float far);
+		static Mat4 orthographic(float width, float height, float near, float far);
 		static Mat4 viewport(float width, float height);
 };

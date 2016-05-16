@@ -11,8 +11,14 @@ float Camera::far() const
 	return _far;
 }
 
+void Camera::setPerspective(bool perspective)
+{
+	_perspective = perspective;
+}
+
 Camera::Camera(Vec3 eye, Vec3 center, float fov, float width, float height, float near, float far) :
-	_eye(eye), _center(center), _fov(fov), width(width), height(height), _near(near), _far(far), _rotateAroundCenter(true)
+	_eye(eye), _center(center), _fov(fov), width(width), height(height), _near(near), _far(far),
+	_rotateAroundCenter(true), _perspective(true)
 {
 	calculateView();
 	calculateProjectionViewport();
@@ -168,7 +174,15 @@ float Camera::yRotateAroundEye()
 
 void Camera::calculateProjectionViewport()
 {
-	Mat4 projection = Mat4::perspective(_fov, width / height, _near, _far);
+	Mat4 projection;
+	if(_perspective)
+	{
+		projection = Mat4::perspective(_fov, width / height, _near, _far);
+	}
+	else
+	{
+		projection = Mat4::orthographic(width, height, _near, _far);
+	}
 	Mat4 viewport = Mat4::viewport(width, height);
 
 	_projectionViewport = viewport * projection;

@@ -139,6 +139,17 @@ Mat4 Mat4::perspective(float fov, float aspect, float near, float far)
 	return perspective;
 }
 
+Mat4 Mat4::orthographic(float width, float height, float near, float far)
+{
+	Mat4 orthographic = Mat4::identity();
+
+	orthographic[0 + 0 * 4] = 2 / width;
+	orthographic[1 + 1 * 4] = 2 / height;
+	orthographic[2 + 3 * 4] = near / (near - far);
+
+	return orthographic;
+}
+
 Mat4 Mat4::viewport(float width, float height)
 {
 	Mat4 viewport = Mat4::identity();

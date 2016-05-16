@@ -34,7 +34,7 @@ class MainWindow : public QWidget
 		QPushButton *addButton;
 		QDoubleSpinBox *eyeXEdit, *eyeYEdit, *eyeZEdit;
 		QDoubleSpinBox *centerXEdit, *centerYEdit, *centerZEdit;
-		QSpinBox *fovSpinBox;
+		QLabel *fovLabel; QSpinBox *fovSpinBox;
 		QListWidget *objectsList;
 		QDoubleSpinBox *translateXEdit, *translateYEdit, *translateZEdit;
 		QDoubleSpinBox *scaleXEdit, *scaleYEdit, *scaleZEdit;
@@ -44,6 +44,7 @@ class MainWindow : public QWidget
 		void redraw();
 		void addDialog();
 		void switchCamera(bool);
+		void switchProjection(bool);
 		void moveCamera();
 		void rotateCamera();
 		void changeFov(int);

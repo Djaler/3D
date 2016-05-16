@@ -31,7 +31,7 @@ class MainWindow : public QWidget
 		QSlider *verticalBar;
 		QSlider *horizontalBar;
 
-		QPushButton *addButton;
+		QPushButton *addButton, *deleteButton;
 		QDoubleSpinBox *eyeXEdit, *eyeYEdit, *eyeZEdit;
 		QDoubleSpinBox *centerXEdit, *centerYEdit, *centerZEdit;
 		QLabel *fovLabel; QSpinBox *fovSpinBox;
@@ -51,4 +51,5 @@ class MainWindow : public QWidget
 		void selectObject(int);
 		void changeModel();
 		void editObject(QModelIndex);
+		void deleteObj();
 };

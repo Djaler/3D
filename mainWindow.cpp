@@ -150,6 +150,10 @@ void MainWindow::initUI()
 	rightPanel->addWidget(addButton, 6, 0, 1, 3);
 	connect(addButton, SIGNAL(pressed()), this, SLOT(addDialog()));
 
+	deleteButton = new QPushButton("Удалить");
+	rightPanel->addWidget(deleteButton, 7, 0, 1, 3);
+	connect(deleteButton, SIGNAL(pressed()), this, SLOT(deleteObj()));
+
 	objectsList = new QListWidget();
 	connect(objectsList, SIGNAL(currentRowChanged(int)), this, SLOT(selectObject(int)));
 	connect(objectsList, SIGNAL(doubleClicked(QModelIndex)), this, SLOT(editObject(QModelIndex)));
@@ -377,41 +381,66 @@ void MainWindow::changeFov(int fov)
 
 void MainWindow::selectObject(int number)
 {
-	disconnect(translateXEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
-	translateXEdit->setValue(objects->at(number).object().xTranslate());
-	connect(translateXEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
+	if(number == -1)
+	{
+		translateXEdit->setDisabled(true);
+		translateYEdit->setDisabled(true);
+		translateZEdit->setDisabled(true);
+		rotateXEdit->setDisabled(true);
+		rotateYEdit->setDisabled(true);
+		rotateZEdit->setDisabled(true);
+		scaleXEdit->setDisabled(true);
+		scaleYEdit->setDisabled(true);
+		scaleZEdit->setDisabled(true);
+	}
+	else
+	{
+		translateXEdit->setDisabled(false);
+		translateYEdit->setDisabled(false);
+		translateZEdit->setDisabled(false);
+		rotateXEdit->setDisabled(false);
+		rotateYEdit->setDisabled(false);
+		rotateZEdit->setDisabled(false);
+		scaleXEdit->setDisabled(false);
+		scaleYEdit->setDisabled(false);
+		scaleZEdit->setDisabled(false);
 
-	disconnect(translateYEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
-	translateYEdit->setValue(objects->at(number).object().yTranslate());
-	connect(translateYEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
+		disconnect(translateXEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
+		translateXEdit->setValue(objects->at(number).object().xTranslate());
+		connect(translateXEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
 
-	disconnect(translateZEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
-	translateZEdit->setValue(objects->at(number).object().zTranslate());
-	connect(translateZEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
+		disconnect(translateYEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
+		translateYEdit->setValue(objects->at(number).object().yTranslate());
+		connect(translateYEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
 
-	disconnect(scaleXEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
-	scaleXEdit->setValue(objects->at(number).object().xScale());
-	connect(scaleXEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
+		disconnect(translateZEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
+		translateZEdit->setValue(objects->at(number).object().zTranslate());
+		connect(translateZEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
 
-	disconnect(scaleYEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
-	scaleYEdit->setValue(objects->at(number).object().yScale());
-	connect(scaleYEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
+		disconnect(scaleXEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
+		scaleXEdit->setValue(objects->at(number).object().xScale());
+		connect(scaleXEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
 
-	disconnect(scaleZEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
-	scaleZEdit->setValue(objects->at(number).object().zScale());
-	connect(scaleZEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
+		disconnect(scaleYEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
+		scaleYEdit->setValue(objects->at(number).object().yScale());
+		connect(scaleYEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
 
-	disconnect(rotateXEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
-	rotateXEdit->setValue(objects->at(number).object().xRotate());
-	connect(rotateXEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
+		disconnect(scaleZEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
+		scaleZEdit->setValue(objects->at(number).object().zScale());
+		connect(scaleZEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
 
-	disconnect(rotateYEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
-	rotateYEdit->setValue(objects->at(number).object().yRotate());
-	connect(rotateYEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
+		disconnect(rotateXEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
+		rotateXEdit->setValue(objects->at(number).object().xRotate());
+		connect(rotateXEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
 
-	disconnect(rotateZEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
-	rotateZEdit->setValue(objects->at(number).object().zRotate());
-	connect(rotateZEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
+		disconnect(rotateYEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
+		rotateYEdit->setValue(objects->at(number).object().yRotate());
+		connect(rotateYEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
+
+		disconnect(rotateZEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
+		rotateZEdit->setValue(objects->at(number).object().zRotate());
+		connect(rotateZEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
+	}
 
 	currentObject = number;
 }
@@ -459,6 +488,21 @@ void MainWindow::editObject(QModelIndex index)
 	tardis.object().updateModel();
 
 	objects->at(index.row()) = tardis;
+	redraw();
+}
+
+void MainWindow::deleteObj()
+{
+	objects->erase(objects->begin() + currentObject);
+	objectsList->takeItem(currentObject);
+
+	int number = objects->size() - 1;
+	if(number >= 0)
+	{
+		objectsList->item(number)->setSelected(true);
+	}
+	selectObject(number);
+
 	redraw();
 }
 

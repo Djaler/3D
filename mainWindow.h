@@ -14,6 +14,7 @@ class MainWindow : public QWidget
 	private:
 		void initUI();
 		void center();
+		void updateCameraCoords();
 
 		int width;
 		int height;
@@ -28,9 +29,13 @@ class MainWindow : public QWidget
 		QSlider *horizontalBar;
 
 		QPushButton *addButton;
+		QLineEdit *eyeXEdit, *eyeYEdit, *eyeZEdit;
+		QLineEdit *centerXEdit, *centerYEdit, *centerZEdit;
 
 	private slots:
 		void redraw();
 		void add();
 		void switchCamera(bool);
+		void moveCamera();
+		void rotateCamera();
 };

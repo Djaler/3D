@@ -21,6 +21,7 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent)
 	Vec3 center(0, 0, 0);
 
 	camera = new Camera(eye, center, 90, width, height, 0.1, 10000);
+	updateCameraCoords();
 	switchCamera(true);
 
 	Tardis tardis(200, 500, 180, 480, 180, 30, 10, 20, 30, 220, 30, 20, 3);
@@ -36,7 +37,6 @@ void MainWindow::initUI()
 	QVBoxLayout *drawLayout = new QVBoxLayout();
 
 	QHBoxLayout *horizontalLayout = new QHBoxLayout();
-	horizontalLayout->setAlignment(Qt::AlignLeft);
 
 	drawArea = new QLabel();
 	drawArea->resize(width, height);
@@ -53,7 +53,7 @@ void MainWindow::initUI()
 	verticalBar->setMaximum(89);
 	verticalBar->setValue(0);
 
-	connect(verticalBar, SIGNAL(valueChanged(int)), this, SLOT(redraw()));
+	connect(verticalBar, SIGNAL(sliderMoved(int)), this, SLOT(rotateCamera()));
 	horizontalLayout->addWidget(verticalBar);
 
 	drawLayout->addLayout(horizontalLayout);
@@ -63,24 +63,52 @@ void MainWindow::initUI()
 	horizontalBar->setMaximum(180);
 	horizontalBar->setValue(0);
 
-	connect(horizontalBar, SIGNAL(valueChanged(int)), this, SLOT(redraw()));
+	connect(horizontalBar, SIGNAL(sliderMoved(int)), this, SLOT(rotateCamera()));
 	drawLayout->addWidget(horizontalBar);
 
 	mainLayout->addLayout(drawLayout);
 
-	QVBoxLayout *rightPanel = new QVBoxLayout();
+	QGridLayout *rightPanel = new QGridLayout();
 	rightPanel->setAlignment(Qt::AlignTop);
 
 	addButton = new QPushButton("Добавить");
-	rightPanel->addWidget(addButton);
+	rightPanel->addWidget(addButton, 0, 0, 1, 3);
 	connect(addButton, SIGNAL(pressed()), this, SLOT(add()));
 
 	QRadioButton *rotateAroundCenterRadio = new QRadioButton("Поворот камеры вокруг точки зрения");
 	rotateAroundCenterRadio->setChecked(true);
 	connect(rotateAroundCenterRadio, SIGNAL(toggled(bool)), this, SLOT(switchCamera(bool)));
-	rightPanel->addWidget(rotateAroundCenterRadio);
+	rightPanel->addWidget(rotateAroundCenterRadio, 1, 0, 1, 3);
 	QRadioButton *rotateAroundEyeRadio = new QRadioButton("Поворот камеры вокруг своей оси");
-	rightPanel->addWidget(rotateAroundEyeRadio);
+	rightPanel->addWidget(rotateAroundEyeRadio, 2, 0, 1, 3);
+
+	rightPanel->addWidget(new QLabel("Координаты камеры"), 3, 0, 1, 3);
+
+	eyeXEdit = new QLineEdit();
+	connect(eyeXEdit, SIGNAL(editingFinished()), this, SLOT(moveCamera()));
+	rightPanel->addWidget(eyeXEdit, 4, 0, 1, 1);
+
+	eyeYEdit = new QLineEdit();
+	connect(eyeYEdit, SIGNAL(editingFinished()), this, SLOT(moveCamera()));
+	rightPanel->addWidget(eyeYEdit, 4, 1, 1, 1);
+
+	eyeZEdit = new QLineEdit();
+	connect(eyeZEdit, SIGNAL(editingFinished()), this, SLOT(moveCamera()));
+	rightPanel->addWidget(eyeZEdit, 4, 2, 1, 1);
+
+	rightPanel->addWidget(new QLabel("Координаты точки зрения"), 5, 0, 1, 3);
+
+	centerXEdit = new QLineEdit();
+	connect(centerXEdit, SIGNAL(editingFinished()), this, SLOT(moveCamera()));
+	rightPanel->addWidget(centerXEdit, 6, 0, 1, 1);
+
+	centerYEdit = new QLineEdit();
+	connect(centerYEdit, SIGNAL(editingFinished()), this, SLOT(moveCamera()));
+	rightPanel->addWidget(centerYEdit, 6, 1, 1, 1);
+
+	centerZEdit = new QLineEdit();
+	connect(centerZEdit, SIGNAL(editingFinished()), this, SLOT(moveCamera()));
+	rightPanel->addWidget(centerZEdit, 6, 2, 1, 1);
 
 	mainLayout->addLayout(rightPanel);
 
@@ -101,8 +129,6 @@ void MainWindow::redraw()
 	{
 		zBuffer[i] = numeric_limits<int>::max();
 	}
-
-	camera->rotate(verticalBar->value(), horizontalBar->value());
 
 	Mat4 view = camera->view();
 
@@ -151,6 +177,7 @@ void MainWindow::redraw()
 		}
 		if(!cutted)
 		{
+			#pragma omp parallel for num_threads(numCores)
 			for(size_t j = 0; j < buf->size(); j++)
 			{
 				drawTriangle(buf->at(j).v1, buf->at(j).v2, buf->at(j).v3, buf->at(j).intensity, &image, zBuffer, width, height);
@@ -181,16 +208,29 @@ void MainWindow::add()
 
 void MainWindow::switchCamera(bool rotateAroundCenter)
 {
-	if(rotateAroundCenter)
-	{
-		verticalBar->setValue(90 - camera->xRotateArountCenter());
-	}
-	else
-	{
-		verticalBar->setValue(camera->xRotateArountEye() - 90);
-	}
 	camera->setRotateAroundCenter(rotateAroundCenter);
+	verticalBar->setValue(camera->xRotate());
+	horizontalBar->setValue(camera->yRotate());
 }
+
+void MainWindow::moveCamera()
+{
+	camera->setEye(Vec3(eyeXEdit->text().toFloat(), eyeYEdit->text().toFloat(), eyeZEdit->text().toFloat()));
+	camera->setCenter(Vec3(centerXEdit->text().toFloat(), centerYEdit->text().toFloat(), centerZEdit->text().toFloat()));
+
+	verticalBar->setValue(camera->xRotate());
+	horizontalBar->setValue(camera->yRotate());
+
+	redraw();
+}
+
+void MainWindow::rotateCamera()
+{
+	camera->rotate(verticalBar->value(), horizontalBar->value());
+	updateCameraCoords();
+	redraw();
+}
+
 
 void MainWindow::center()
 {
@@ -198,4 +238,15 @@ void MainWindow::center()
 	QPoint cp = QDesktopWidget().availableGeometry().center();
 	qr.moveCenter(cp);
 	move(qr.topLeft());
+}
+
+void MainWindow::updateCameraCoords()
+{
+	eyeXEdit->setText(QString::number(camera->eye().x, 'f', 2));
+	eyeYEdit->setText(QString::number(camera->eye().y, 'f', 2));
+	eyeZEdit->setText(QString::number(camera->eye().z, 'f', 2));
+
+	centerXEdit->setText(QString::number(camera->center().x, 'f', 2));
+	centerYEdit->setText(QString::number(camera->center().y, 'f', 2));
+	centerZEdit->setText(QString::number(camera->center().z, 'f', 2));
 }

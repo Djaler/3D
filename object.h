@@ -1,8 +1,5 @@
 #pragma once
 
-#include <fstream>
-#include <sstream>
-#include <iostream>
 #include <vector>
 #include "vector.h"
 #include "matrix.h"
@@ -41,7 +38,6 @@ class Object
 		void setTranslate(float xTranslate, float yTranslate, float zTranslate);
 		void setRotate(float xRotate, float yRotate, float zRotate);
 
-	private:
 		void updateModel();
 
 };

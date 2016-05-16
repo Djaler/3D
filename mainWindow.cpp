@@ -16,7 +16,7 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent)
 
 	numCores = omp_get_num_procs();
 
-	objects = new vector<pair<Object, Tardis>>();
+	objects = new vector<Tardis>();
 
 	Tardis tardis(200, 500, 180, 480, 180, 30, 10, 20, 30, 220, 30, 20, 3);
 	addObject(tardis);
@@ -129,7 +129,7 @@ void MainWindow::initUI()
 
 	addButton = new QPushButton("Добавить");
 	rightPanel->addWidget(addButton, 7, 0, 1, 3);
-	connect(addButton, SIGNAL(pressed()), this, SLOT(add()));
+	connect(addButton, SIGNAL(pressed()), this, SLOT(addDialog()));
 
 	objectsList = new QListWidget();
 	connect(objectsList, SIGNAL(currentRowChanged(int)), this, SLOT(selectObject(int)));
@@ -231,19 +231,19 @@ void MainWindow::redraw()
 
 	for(size_t i = 0; i < objects->size(); i++)
 	{
-		Mat4 modelView = view * objects->at(i).first.model();
+		Mat4 modelView = view * objects->at(i).object().model();
 
-		vector<Polygon> *buf = new vector<Polygon>();
-		volatile bool cutted = false;
+		vector<Polygon> *object = new vector<Polygon>();
+		bool cutted = false;
 
 		#pragma omp parallel for shared(cutted) num_threads(numCores)
-		for(size_t j = 0; j < objects->at(i).first.polygonsCount(); j++)
+		for(size_t j = 0; j < objects->at(i).object().polygonsCount(); j++)
 		{
 			if(cutted)
 			{
 				continue;
 			}
-			Polygon polygon = objects->at(i).first.polygon(j);
+			Polygon polygon = objects->at(i).object().polygon(j);
 
 			Vec4 v1 = modelView * polygon.v1.toVec4();
 			Vec4 v2 = modelView * polygon.v2.toVec4();
@@ -267,15 +267,16 @@ void MainWindow::redraw()
 			else
 			{
 				#pragma omp critical
-				buf->push_back(Polygon(v1.toVec3(), v2.toVec3(), v3.toVec3(), intensity));
+				object->push_back(Polygon(v1.toVec3(), v2.toVec3(), v3.toVec3(), intensity));
 			}
 		}
 		if(!cutted)
 		{
 			#pragma omp parallel for num_threads(numCores)
-			for(size_t j = 0; j < buf->size(); j++)
+			for(size_t j = 0; j < object->size(); j++)
 			{
-				drawTriangle(buf->at(j).v1, buf->at(j).v2, buf->at(j).v3, buf->at(j).intensity, &image, zBuffer, width, height);
+				drawTriangle(object->at(j).v1, object->at(j).v2, object->at(j).v3,
+							 object->at(j).intensity, &image, zBuffer, width, height);
 			}
 
 		}
@@ -285,17 +286,23 @@ void MainWindow::redraw()
 	fpsMeter->setText(QString("FPS = %1").arg(1000 / time.elapsed()));
 }
 
-void MainWindow::add()
+void MainWindow::addDialog()
 {
 	float width = 0, height = 0, recessWidth = 0, recessHeight = 0;
 	float ledgeWidth = 0, ledgeHeight = 0, pyramidHeight = 0;
 	float lanternRadius = 0, lanternHeight = 0;
 	float edgeWidth = 0, edgeHeight = 0;
 	float septumWidth = 0; int septumCount = 0;
-	ParametersWidget *addWidget = new ParametersWidget(&width, &height, &recessWidth, &recessHeight, &ledgeWidth, &ledgeHeight, &pyramidHeight, &lanternRadius, &lanternHeight, &edgeWidth, &edgeHeight, &septumWidth, &septumCount, this);
+
+	ParametersWidget *addWidget = new ParametersWidget(&width, &height, &recessWidth, &recessHeight,
+													   &ledgeWidth, &ledgeHeight, &pyramidHeight,
+													   &lanternRadius, &lanternHeight,
+													   &edgeWidth, &edgeHeight,
+													   &septumWidth, &septumCount, this);
 	addWidget->exec();
 
-	Tardis tardis(width, height, recessWidth, recessHeight, ledgeWidth, ledgeHeight, pyramidHeight, lanternRadius, lanternHeight, edgeWidth, edgeHeight, septumWidth, septumCount);
+	Tardis tardis(width, height, recessWidth, recessHeight, ledgeWidth, ledgeHeight, pyramidHeight,
+				  lanternRadius, lanternHeight, edgeWidth, edgeHeight, septumWidth, septumCount);
 
 	addObject(tardis);
 	redraw();
@@ -335,39 +342,39 @@ void MainWindow::changeFov(int fov)
 void MainWindow::selectObject(int number)
 {
 	disconnect(translateXEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
-	translateXEdit->setValue(objects->at(number).first.xTranslate());
+	translateXEdit->setValue(objects->at(number).object().xTranslate());
 	connect(translateXEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
 
 	disconnect(translateYEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
-	translateYEdit->setValue(objects->at(number).first.yTranslate());
+	translateYEdit->setValue(objects->at(number).object().yTranslate());
 	connect(translateYEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
 
 	disconnect(translateZEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
-	translateZEdit->setValue(objects->at(number).first.zTranslate());
+	translateZEdit->setValue(objects->at(number).object().zTranslate());
 	connect(translateZEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
 
 	disconnect(scaleXEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
-	scaleXEdit->setValue(objects->at(number).first.xScale());
+	scaleXEdit->setValue(objects->at(number).object().xScale());
 	connect(scaleXEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
 
 	disconnect(scaleYEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
-	scaleYEdit->setValue(objects->at(number).first.yScale());
+	scaleYEdit->setValue(objects->at(number).object().yScale());
 	connect(scaleYEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
 
 	disconnect(scaleZEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
-	scaleZEdit->setValue(objects->at(number).first.zScale());
+	scaleZEdit->setValue(objects->at(number).object().zScale());
 	connect(scaleZEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
 
 	disconnect(rotateXEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
-	rotateXEdit->setValue(objects->at(number).first.xRotate());
+	rotateXEdit->setValue(objects->at(number).object().xRotate());
 	connect(rotateXEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
 
 	disconnect(rotateYEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
-	rotateYEdit->setValue(objects->at(number).first.yRotate());
+	rotateYEdit->setValue(objects->at(number).object().yRotate());
 	connect(rotateYEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
 
 	disconnect(rotateZEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
-	rotateZEdit->setValue(objects->at(number).first.zRotate());
+	rotateZEdit->setValue(objects->at(number).object().zRotate());
 	connect(rotateZEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
 
 	currentObject = number;
@@ -375,40 +382,47 @@ void MainWindow::selectObject(int number)
 
 void MainWindow::changeModel()
 {
-	objects->at(currentObject).first.setTranslate(translateXEdit->value(),
+	objects->at(currentObject).object().setTranslate(translateXEdit->value(),
 												  translateYEdit->value(),
 												  translateZEdit->value());
-	objects->at(currentObject).first.setScale(scaleXEdit->value(),
+	objects->at(currentObject).object().setScale(scaleXEdit->value(),
 											  scaleYEdit->value(),
 											  scaleZEdit->value());
-	objects->at(currentObject).first.setRotate(rotateXEdit->value(),
+	objects->at(currentObject).object().setRotate(rotateXEdit->value(),
 											   rotateYEdit->value(),
 											   rotateZEdit->value());
-
+	objects->at(currentObject).object().updateModel();
 	redraw();
 }
 
 void MainWindow::editObject(QModelIndex index)
 {
-	Tardis old = objects->at(index.row()).second;
-	float width = old.width, height = old.height, recessWidth = old.recessWidth, recessHeight = old.recessHeight;
-	float ledgeWidth = old.ledgeWidth, ledgeHeight = old.ledgeHeight, pyramidHeight = old.pyramidHeight;
+	Tardis old = objects->at(index.row());
+	float width = old.width, height = old.height,
+			recessWidth = old.recessWidth, recessHeight = old.recessHeight;
+	float ledgeWidth = old.ledgeWidth, ledgeHeight = old.ledgeHeight,
+			pyramidHeight = old.pyramidHeight;
 	float lanternRadius = old.lanternRadius, lanternHeight = old.lanternHeight;
 	float edgeWidth = old.edgeWidth, edgeHeight = old.edgeHeight;
 	float septumWidth = old.septumWidth; int septumCount = old.septumCount;
-	ParametersWidget *addWidget = new ParametersWidget(&width, &height, &recessWidth, &recessHeight, &ledgeWidth, &ledgeHeight, &pyramidHeight, &lanternRadius, &lanternHeight, &edgeWidth, &edgeHeight, &septumWidth, &septumCount, this);
+	ParametersWidget *addWidget = new ParametersWidget(&width, &height, &recessWidth, &recessHeight,
+													   &ledgeWidth, &ledgeHeight, &pyramidHeight,
+													   &lanternRadius, &lanternHeight,
+													   &edgeWidth, &edgeHeight,
+													   &septumWidth, &septumCount, this);
 	addWidget->exec();
 
-	Tardis tardis(width, height, recessWidth, recessHeight, ledgeWidth, ledgeHeight, pyramidHeight, lanternRadius, lanternHeight, edgeWidth, edgeHeight, septumWidth, septumCount);
+	Tardis tardis(width, height, recessWidth, recessHeight, ledgeWidth, ledgeHeight, pyramidHeight,
+				  lanternRadius, lanternHeight, edgeWidth, edgeHeight, septumWidth, septumCount);
 
-	Object oldObj = objects->at(index.row()).first;
+	Object oldObj = objects->at(index.row()).object();
 
-	Object object = tardis.getObject();
-	object.setTranslate(oldObj.xTranslate(), oldObj.yTranslate(), oldObj.zTranslate());
-	object.setRotate(oldObj.xRotate(), oldObj.yRotate(), oldObj.zRotate());
-	object.setScale(oldObj.xScale(), oldObj.yScale(), oldObj.zScale());
+	tardis.object().setTranslate(oldObj.xTranslate(), oldObj.yTranslate(), oldObj.zTranslate());
+	tardis.object().setRotate(oldObj.xRotate(), oldObj.yRotate(), oldObj.zRotate());
+	tardis.object().setScale(oldObj.xScale(), oldObj.yScale(), oldObj.zScale());
+	tardis.object().updateModel();
 
-	objects->at(index.row()) = make_pair(object, tardis);
+	objects->at(index.row()) = tardis;
 	redraw();
 }
 
@@ -450,7 +464,7 @@ void MainWindow::updateCameraParams()
 void MainWindow::addObject(Tardis tardis)
 {
 	int number = objects->size();
-	objects->push_back(make_pair(tardis.getObject(), tardis));
+	objects->push_back(tardis);
 	objectsList->addItem(QString("TARDIS №%1").arg(number + 1));
 	objectsList->item(number)->setSelected(true);
 	selectObject(number);

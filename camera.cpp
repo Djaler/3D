@@ -1,3 +1,4 @@
+#include <QtMath>
 #include "camera.h"
 
 float Camera::near() const

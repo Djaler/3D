@@ -39,7 +39,7 @@ class Tardis
 			initEdge();
 		}
 
-		Object getObject()
+		Object& object()
 		{
 			return tardis;
 		}
@@ -168,7 +168,7 @@ class Tardis
 
 			int segments = 50;
 
-			float stepF = M_PI / segments;
+			float stepF = 1.05 * M_PI / segments;
 			float stepO = M_PI / segments;
 
 			for(int i = 0; i < segments; i++)

@@ -2,7 +2,6 @@
 
 #include <QtWidgets>
 #include "tardis.h"
-#include "object.h"
 #include "camera.h"
 
 class MainWindow : public QWidget
@@ -22,7 +21,7 @@ class MainWindow : public QWidget
 		int width;
 		int height;
 
-		vector<pair<Object, Tardis>> *objects;
+		vector<Tardis> *objects;
 		int currentObject;
 		Camera *camera;
 		int numCores;
@@ -43,7 +42,7 @@ class MainWindow : public QWidget
 
 	private slots:
 		void redraw();
-		void add();
+		void addDialog();
 		void switchCamera(bool);
 		void moveCamera();
 		void rotateCamera();

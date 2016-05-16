@@ -1,3 +1,6 @@
+#include <fstream>
+#include <sstream>
+#include <iostream>
 #include "object.h"
 
 float Object::xRotate() const
@@ -52,7 +55,6 @@ void Object::setScale(float xScale, float yScale, float zScale)
 	_zScale = zScale;
 
 	scale = Mat4::scale(xScale, yScale, zScale);
-	updateModel();
 }
 
 void Object::setTranslate(float xTranslate, float yTranslate, float zTranslate)
@@ -62,7 +64,6 @@ void Object::setTranslate(float xTranslate, float yTranslate, float zTranslate)
 	_zTranslate = zTranslate;
 
 	translate = Mat4::translate(xTranslate, yTranslate, zTranslate);
-	updateModel();
 }
 
 void Object::setRotate(float xRotate, float yRotate, float zRotate)
@@ -72,7 +73,6 @@ void Object::setRotate(float xRotate, float yRotate, float zRotate)
 	_zRotate = zRotate;
 
 	rotate = Mat4::rotate(xRotate, yRotate, zRotate);
-	updateModel();
 }
 
 Object::Object() : polygons()

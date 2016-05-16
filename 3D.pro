@@ -15,7 +15,9 @@ TEMPLATE = app
 SOURCES += main.cpp \
 	mainWindow.cpp \
     camera.cpp \
-    object.cpp
+    object.cpp \
+    matrix.cpp \
+    vector.cpp
 
 HEADERS  += \
 	matrix.h \

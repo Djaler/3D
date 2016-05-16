@@ -334,9 +334,42 @@ void MainWindow::changeFov(int fov)
 
 void MainWindow::selectObject(int number)
 {
+	disconnect(translateXEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
 	translateXEdit->setValue(objects->at(number).first.xTranslate());
+	connect(translateXEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
+
+	disconnect(translateYEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
 	translateYEdit->setValue(objects->at(number).first.yTranslate());
+	connect(translateYEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
+
+	disconnect(translateZEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
 	translateZEdit->setValue(objects->at(number).first.zTranslate());
+	connect(translateZEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
+
+	disconnect(scaleXEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
+	scaleXEdit->setValue(objects->at(number).first.xScale());
+	connect(scaleXEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
+
+	disconnect(scaleYEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
+	scaleYEdit->setValue(objects->at(number).first.yScale());
+	connect(scaleYEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
+
+	disconnect(scaleZEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
+	scaleZEdit->setValue(objects->at(number).first.zScale());
+	connect(scaleZEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
+
+	disconnect(rotateXEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
+	rotateXEdit->setValue(objects->at(number).first.xRotate());
+	connect(rotateXEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
+
+	disconnect(rotateYEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
+	rotateYEdit->setValue(objects->at(number).first.yRotate());
+	connect(rotateYEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
+
+	disconnect(rotateZEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
+	rotateZEdit->setValue(objects->at(number).first.zRotate());
+	connect(rotateZEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
+
 	currentObject = number;
 }
 

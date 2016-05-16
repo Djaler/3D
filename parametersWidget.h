@@ -3,7 +3,7 @@
 #include <QtWidgets>
 #include <iostream>
 
-class AddWidget : public QDialog
+class ParametersWidget : public QDialog
 {
 		Q_OBJECT
 
@@ -20,7 +20,7 @@ class AddWidget : public QDialog
 	QLineEdit *septumWidthEdit, *septumCountEdit;
 
 	public:
-		AddWidget(float *width, float *height, float *recessWidth,float *recessHeight,
+		ParametersWidget(float *width, float *height, float *recessWidth,float *recessHeight,
 				  float *ledgeWidth, float *ledgeHeight, float *pyramidHeight,float *lanternRadius,
 				  float *lanternHeight, float *edgeWidth,float *edgeHeight, float *septumWidth,
 				  int *septumCount, QWidget *parent = 0) : QDialog(parent)

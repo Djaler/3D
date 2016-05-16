@@ -32,4 +32,5 @@ class MainWindow : public QWidget
 	private slots:
 		void redraw();
 		void add();
+		void switchCamera(bool);
 };

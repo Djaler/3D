@@ -3,7 +3,7 @@
 #include "matrix.h"
 #include "drawing.h"
 #include "tardis.h"
-#include "addwidget.h"
+#include "parametersWidget.h"
 
 using namespace std;
 
@@ -20,8 +20,11 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent)
 	Vec3 eye(0, 0, -600);
 	Vec3 center(0, 0, 0);
 
-	camera = new Camera(eye, center, 90, width, height, 0.1, 1000);
-	verticalBar->setValue(90 - camera->xRotate());
+	camera = new Camera(eye, center, 90, width, height, 0.1, 10000);
+	switchCamera(true);
+
+	Tardis tardis(200, 500, 180, 480, 180, 30, 10, 20, 30, 220, 30, 20, 3);
+	objects->push_back(tardis.getObject());
 
 	redraw();
 }
@@ -33,6 +36,7 @@ void MainWindow::initUI()
 	QVBoxLayout *drawLayout = new QVBoxLayout();
 
 	QHBoxLayout *horizontalLayout = new QHBoxLayout();
+	horizontalLayout->setAlignment(Qt::AlignLeft);
 
 	drawArea = new QLabel();
 	drawArea->resize(width, height);
@@ -71,6 +75,13 @@ void MainWindow::initUI()
 	rightPanel->addWidget(addButton);
 	connect(addButton, SIGNAL(pressed()), this, SLOT(add()));
 
+	QRadioButton *rotateAroundCenterRadio = new QRadioButton("Поворот камеры вокруг точки зрения");
+	rotateAroundCenterRadio->setChecked(true);
+	connect(rotateAroundCenterRadio, SIGNAL(toggled(bool)), this, SLOT(switchCamera(bool)));
+	rightPanel->addWidget(rotateAroundCenterRadio);
+	QRadioButton *rotateAroundEyeRadio = new QRadioButton("Поворот камеры вокруг своей оси");
+	rightPanel->addWidget(rotateAroundEyeRadio);
+
 	mainLayout->addLayout(rightPanel);
 
 	setLayout(mainLayout);
@@ -91,7 +102,7 @@ void MainWindow::redraw()
 		zBuffer[i] = numeric_limits<int>::max();
 	}
 
-	camera->rotateAroundCenter(verticalBar->value(), horizontalBar->value());
+	camera->rotate(verticalBar->value(), horizontalBar->value());
 
 	Mat4 view = camera->view();
 
@@ -101,9 +112,16 @@ void MainWindow::redraw()
 	{
 		Mat4 modelView = view * objects->at(i).model();
 
-		#pragma omp parallel for num_threads(numCores)
+		vector<Polygon> *buf = new vector<Polygon>();
+		volatile bool cutted = false;
+
+		#pragma omp parallel for shared(cutted) num_threads(numCores)
 		for(size_t j = 0; j < objects->at(i).polygonsCount(); j++)
 		{
+			if(cutted)
+			{
+				continue;
+			}
 			Polygon polygon = objects->at(i).polygon(j);
 
 			Vec4 v1 = modelView * polygon.v1.toVec4();
@@ -119,7 +137,25 @@ void MainWindow::redraw()
 			v2 = projectionViewport * v2;
 			v3 = projectionViewport * v3;
 
-			drawTriangle(v1.toVec3(), v2.toVec3(), v3.toVec3(), intensity, &image, zBuffer, width, height);
+			if(v1.z <= 0.1 || v2.z <= 0.1 || v3.z <= 0.1 ||
+			   v1.z >= 10000 || v2.z >= 10000 || v3.z >= 10000)
+			{
+				cutted = true;
+				continue;
+			}
+			else
+			{
+				#pragma omp critical
+				buf->push_back(Polygon(v1.toVec3(), v2.toVec3(), v3.toVec3(), intensity));
+			}
+		}
+		if(!cutted)
+		{
+			for(size_t j = 0; j < buf->size(); j++)
+			{
+				drawTriangle(buf->at(j).v1, buf->at(j).v2, buf->at(j).v3, buf->at(j).intensity, &image, zBuffer, width, height);
+			}
+
 		}
 	}
 	drawArea->setPixmap(QPixmap::fromImage(image.mirrored()));
@@ -134,13 +170,26 @@ void MainWindow::add()
 	float lanternRadius = 0, lanternHeight = 0;
 	float edgeWidth = 0, edgeHeight = 0;
 	float septumWidth = 0; int septumCount = 0;
-	AddWidget *addWidget = new AddWidget(&width, &height, &recessWidth, &recessHeight, &ledgeWidth, &ledgeHeight, &pyramidHeight, &lanternRadius, &lanternHeight, &edgeWidth, &edgeHeight, &septumWidth, &septumCount, this);
+	ParametersWidget *addWidget = new ParametersWidget(&width, &height, &recessWidth, &recessHeight, &ledgeWidth, &ledgeHeight, &pyramidHeight, &lanternRadius, &lanternHeight, &edgeWidth, &edgeHeight, &septumWidth, &septumCount, this);
 	addWidget->exec();
 
 	Tardis tardis(width, height, recessWidth, recessHeight, ledgeWidth, ledgeHeight, pyramidHeight, lanternRadius, lanternHeight, edgeWidth, edgeHeight, septumWidth, septumCount);
 	objects->push_back(tardis.getObject());
 	redraw();
 
+}
+
+void MainWindow::switchCamera(bool rotateAroundCenter)
+{
+	if(rotateAroundCenter)
+	{
+		verticalBar->setValue(90 - camera->xRotateArountCenter());
+	}
+	else
+	{
+		verticalBar->setValue(camera->xRotateArountEye() - 90);
+	}
+	camera->setRotateAroundCenter(rotateAroundCenter);
 }
 
 void MainWindow::center()

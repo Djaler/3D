@@ -24,7 +24,7 @@ HEADERS  += \
 	drawing.h \
     camera.h \
     tardis.h \
-    addwidget.h
+    parametersWidget.h
 
 
 QMAKE_LFLAGS += -fopenmp

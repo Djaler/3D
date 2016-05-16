@@ -1,10 +1,20 @@
 #include "camera.h"
 
+float Camera::near() const
+{
+	return _near;
+}
+
+float Camera::far() const
+{
+	return _far;
+}
+
 Camera::Camera(Vec3 eye, Vec3 center, float fov, float width, float height, float near, float far) :
-	_eye(eye), _center(center), _rotateAroundCenter(true)
+	_eye(eye), _center(center), _fov(fov), width(width), height(height), _near(near), _far(far), _rotateAroundCenter(true)
 {
 	calculateView();
-	calculateProjectionViewport(fov, width, height, near, far);
+	calculateProjectionViewport();
 }
 
 Mat4 Camera::projectionViewport()
@@ -35,6 +45,17 @@ Vec3 Camera::center()
 Mat4 Camera::view()
 {
 	return _view;
+}
+
+float Camera::fov()
+{
+	return _fov;
+}
+
+void Camera::setFov(float fov)
+{
+	_fov = fov;
+	calculateProjectionViewport();
 }
 
 void Camera::setEye(Vec3 eye)
@@ -144,9 +165,9 @@ float Camera::yRotateAroundEye()
 	return qRadiansToDegrees(atan(camera.z / camera.x)) - 90;
 }
 
-void Camera::calculateProjectionViewport(float fov, float width, float height, float near, float far)
+void Camera::calculateProjectionViewport()
 {
-	Mat4 projection = Mat4::perspective(fov, width / height, near, far);
+	Mat4 projection = Mat4::perspective(_fov, width / height, _near, _far);
 	Mat4 viewport = Mat4::viewport(width, height);
 
 	_projectionViewport = viewport * projection;

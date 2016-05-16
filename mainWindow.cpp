@@ -12,20 +12,14 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent)
 	width = 600;
 	height = 600;
 	initUI();
+	initCamera();
 
 	numCores = omp_get_num_procs();
 
-	objects = new vector<Object>();
-
-	Vec3 eye(0, 0, -600);
-	Vec3 center(0, 0, 0);
-
-	camera = new Camera(eye, center, 90, width, height, 0.1, 10000);
-	updateCameraCoords();
-	switchCamera(true);
+	objects = new vector<pair<Object, Tardis>>();
 
 	Tardis tardis(200, 500, 180, 480, 180, 30, 10, 20, 30, 220, 30, 20, 3);
-	objects->push_back(tardis.getObject());
+	addObject(tardis);
 
 	redraw();
 }
@@ -71,49 +65,150 @@ void MainWindow::initUI()
 	QGridLayout *rightPanel = new QGridLayout();
 	rightPanel->setAlignment(Qt::AlignTop);
 
-	addButton = new QPushButton("Добавить");
-	rightPanel->addWidget(addButton, 0, 0, 1, 3);
-	connect(addButton, SIGNAL(pressed()), this, SLOT(add()));
-
 	QRadioButton *rotateAroundCenterRadio = new QRadioButton("Поворот камеры вокруг точки зрения");
 	rotateAroundCenterRadio->setChecked(true);
 	connect(rotateAroundCenterRadio, SIGNAL(toggled(bool)), this, SLOT(switchCamera(bool)));
-	rightPanel->addWidget(rotateAroundCenterRadio, 1, 0, 1, 3);
+	rightPanel->addWidget(rotateAroundCenterRadio, 0, 0, 1, 3);
 	QRadioButton *rotateAroundEyeRadio = new QRadioButton("Поворот камеры вокруг своей оси");
-	rightPanel->addWidget(rotateAroundEyeRadio, 2, 0, 1, 3);
+	rightPanel->addWidget(rotateAroundEyeRadio, 1, 0, 1, 3);
 
-	rightPanel->addWidget(new QLabel("Координаты камеры"), 3, 0, 1, 3);
+	rightPanel->addWidget(new QLabel("Координаты камеры"), 2, 0, 1, 3);
 
-	eyeXEdit = new QLineEdit();
-	connect(eyeXEdit, SIGNAL(editingFinished()), this, SLOT(moveCamera()));
-	rightPanel->addWidget(eyeXEdit, 4, 0, 1, 1);
+	eyeXEdit = new QDoubleSpinBox();
+	eyeXEdit->setRange(-99999, 99999);
+	eyeXEdit->setSingleStep(10);
+	eyeXEdit->setValue(0);
+	connect(eyeXEdit, SIGNAL(valueChanged(double)), this, SLOT(moveCamera()));
+	rightPanel->addWidget(eyeXEdit, 3, 0, 1, 1);
 
-	eyeYEdit = new QLineEdit();
-	connect(eyeYEdit, SIGNAL(editingFinished()), this, SLOT(moveCamera()));
-	rightPanel->addWidget(eyeYEdit, 4, 1, 1, 1);
+	eyeYEdit = new QDoubleSpinBox();
+	eyeYEdit->setRange(-99999, 99999);
+	eyeYEdit->setSingleStep(10);
+	eyeYEdit->setValue(0);
+	connect(eyeYEdit, SIGNAL(valueChanged(double)), this, SLOT(moveCamera()));
+	rightPanel->addWidget(eyeYEdit, 3, 1, 1, 1);
 
-	eyeZEdit = new QLineEdit();
-	connect(eyeZEdit, SIGNAL(editingFinished()), this, SLOT(moveCamera()));
-	rightPanel->addWidget(eyeZEdit, 4, 2, 1, 1);
+	eyeZEdit = new QDoubleSpinBox();
+	eyeZEdit->setRange(-99999, 99999);
+	eyeZEdit->setSingleStep(10);
+	eyeZEdit->setValue(-600);
+	connect(eyeZEdit, SIGNAL(valueChanged(double)), this, SLOT(moveCamera()));
+	rightPanel->addWidget(eyeZEdit, 3, 2, 1, 1);
 
-	rightPanel->addWidget(new QLabel("Координаты точки зрения"), 5, 0, 1, 3);
+	rightPanel->addWidget(new QLabel("Координаты точки зрения"), 4, 0, 1, 3);
 
-	centerXEdit = new QLineEdit();
-	connect(centerXEdit, SIGNAL(editingFinished()), this, SLOT(moveCamera()));
-	rightPanel->addWidget(centerXEdit, 6, 0, 1, 1);
+	centerXEdit = new QDoubleSpinBox();
+	centerXEdit->setRange(-99999, 99999);
+	centerXEdit->setSingleStep(10);
+	centerXEdit->setValue(0);
+	connect(centerXEdit, SIGNAL(valueChanged(double)), this, SLOT(moveCamera()));
+	rightPanel->addWidget(centerXEdit, 5, 0, 1, 1);
 
-	centerYEdit = new QLineEdit();
-	connect(centerYEdit, SIGNAL(editingFinished()), this, SLOT(moveCamera()));
-	rightPanel->addWidget(centerYEdit, 6, 1, 1, 1);
+	centerYEdit = new QDoubleSpinBox();
+	centerYEdit->setRange(-99999, 99999);
+	centerYEdit->setSingleStep(10);
+	centerYEdit->setValue(0);
+	connect(centerYEdit, SIGNAL(valueChanged(double)), this, SLOT(moveCamera()));
+	rightPanel->addWidget(centerYEdit, 5, 1, 1, 1);
 
-	centerZEdit = new QLineEdit();
-	connect(centerZEdit, SIGNAL(editingFinished()), this, SLOT(moveCamera()));
-	rightPanel->addWidget(centerZEdit, 6, 2, 1, 1);
+	centerZEdit = new QDoubleSpinBox();
+	centerZEdit->setRange(-99999, 99999);
+	centerZEdit->setSingleStep(10);
+	centerZEdit->setValue(0);
+	connect(centerZEdit, SIGNAL(valueChanged(double)), this, SLOT(moveCamera()));
+	rightPanel->addWidget(centerZEdit, 5, 2, 1, 1);
+
+	rightPanel->addWidget(new QLabel("Поле зрения"), 6, 0, 1, 1);
+
+	fovSpinBox = new QSpinBox();
+	fovSpinBox->setRange(1, 180);
+	fovSpinBox->setValue(90);
+	fovSpinBox->setSingleStep(10);
+	connect(fovSpinBox, SIGNAL(valueChanged(int)), this, SLOT(changeFov(int)));
+	rightPanel->addWidget(fovSpinBox, 6, 1, 1, 2);
+
+	addButton = new QPushButton("Добавить");
+	rightPanel->addWidget(addButton, 7, 0, 1, 3);
+	connect(addButton, SIGNAL(pressed()), this, SLOT(add()));
+
+	objectsList = new QListWidget();
+	connect(objectsList, SIGNAL(currentRowChanged(int)), this, SLOT(selectObject(int)));
+	connect(objectsList, SIGNAL(doubleClicked(QModelIndex)), this, SLOT(editObject(QModelIndex)));
+	rightPanel->addWidget(objectsList, 9, 0, 1, 3);
+
+	rightPanel->addWidget(new QLabel("Смещение"), 10, 0, 1, 3);
+
+	translateXEdit = new QDoubleSpinBox();
+	translateXEdit->setRange(-99999, 99999);
+	translateXEdit->setSingleStep(10);
+	connect(translateXEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
+	rightPanel->addWidget(translateXEdit, 11, 0, 1, 1);
+
+	translateYEdit = new QDoubleSpinBox();
+	translateYEdit->setRange(-99999, 99999);
+	translateYEdit->setSingleStep(10);
+	connect(translateYEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
+	rightPanel->addWidget(translateYEdit, 11, 1, 1, 1);
+
+	translateZEdit = new QDoubleSpinBox();
+	translateZEdit->setRange(-99999, 99999);
+	translateZEdit->setSingleStep(10);
+	connect(translateZEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
+	rightPanel->addWidget(translateZEdit, 11, 2, 1, 1);
+
+	rightPanel->addWidget(new QLabel("Масштабирование"), 12, 0, 1, 3);
+
+	scaleXEdit = new QDoubleSpinBox();
+	scaleXEdit->setRange(-99999, 99999);
+	scaleXEdit->setValue(1);
+	connect(scaleXEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
+	rightPanel->addWidget(scaleXEdit, 13, 0, 1, 1);
+
+	scaleYEdit = new QDoubleSpinBox();
+	scaleYEdit->setRange(-99999, 99999);
+	scaleYEdit->setValue(1);
+	connect(scaleYEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
+	rightPanel->addWidget(scaleYEdit, 13, 1, 1, 1);
+
+	scaleZEdit = new QDoubleSpinBox();
+	scaleZEdit->setRange(-99999, 99999);
+	scaleZEdit->setValue(1);
+	connect(scaleZEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
+	rightPanel->addWidget(scaleZEdit, 13, 2, 1, 1);
+
+	rightPanel->addWidget(new QLabel("Поворот"), 14, 0, 1, 3);
+
+	rotateXEdit = new QDoubleSpinBox();
+	rotateXEdit->setRange(-180, 180);
+	rotateXEdit->setSingleStep(10);
+	connect(rotateXEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
+	rightPanel->addWidget(rotateXEdit, 15, 0, 1, 1);
+
+	rotateYEdit = new QDoubleSpinBox();
+	rotateYEdit->setRange(-180, 180);
+	rotateYEdit->setSingleStep(10);
+	connect(rotateYEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
+	rightPanel->addWidget(rotateYEdit, 15, 1, 1, 1);
+
+	rotateZEdit = new QDoubleSpinBox();
+	rotateZEdit->setRange(-180, 180);
+	rotateZEdit->setSingleStep(10);
+	connect(rotateZEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
+	rightPanel->addWidget(rotateZEdit, 15, 2, 1, 1);
 
 	mainLayout->addLayout(rightPanel);
 
 	setLayout(mainLayout);
 	center();
+}
+
+void MainWindow::initCamera()
+{
+	Vec3 eye(eyeXEdit->value(), eyeYEdit->value(), eyeZEdit->value());
+	Vec3 center(centerXEdit->value(), centerYEdit->value(), centerZEdit->value());
+
+	camera = new Camera(eye, center, fovSpinBox->value(), width, height, 1, 10000);
+	switchCamera(true);
 }
 
 void MainWindow::redraw()
@@ -136,19 +231,19 @@ void MainWindow::redraw()
 
 	for(size_t i = 0; i < objects->size(); i++)
 	{
-		Mat4 modelView = view * objects->at(i).model();
+		Mat4 modelView = view * objects->at(i).first.model();
 
 		vector<Polygon> *buf = new vector<Polygon>();
 		volatile bool cutted = false;
 
 		#pragma omp parallel for shared(cutted) num_threads(numCores)
-		for(size_t j = 0; j < objects->at(i).polygonsCount(); j++)
+		for(size_t j = 0; j < objects->at(i).first.polygonsCount(); j++)
 		{
 			if(cutted)
 			{
 				continue;
 			}
-			Polygon polygon = objects->at(i).polygon(j);
+			Polygon polygon = objects->at(i).first.polygon(j);
 
 			Vec4 v1 = modelView * polygon.v1.toVec4();
 			Vec4 v2 = modelView * polygon.v2.toVec4();
@@ -163,8 +258,8 @@ void MainWindow::redraw()
 			v2 = projectionViewport * v2;
 			v3 = projectionViewport * v3;
 
-			if(v1.z <= 0.1 || v2.z <= 0.1 || v3.z <= 0.1 ||
-			   v1.z >= 10000 || v2.z >= 10000 || v3.z >= 10000)
+			if(v1.z <= camera->near() || v2.z <= camera->near() || v3.z <= camera->near() ||
+			   v1.z >= camera->far() || v2.z >= camera->far() || v3.z >= camera->far())
 			{
 				cutted = true;
 				continue;
@@ -201,9 +296,9 @@ void MainWindow::add()
 	addWidget->exec();
 
 	Tardis tardis(width, height, recessWidth, recessHeight, ledgeWidth, ledgeHeight, pyramidHeight, lanternRadius, lanternHeight, edgeWidth, edgeHeight, septumWidth, septumCount);
-	objects->push_back(tardis.getObject());
-	redraw();
 
+	addObject(tardis);
+	redraw();
 }
 
 void MainWindow::switchCamera(bool rotateAroundCenter)
@@ -215,8 +310,8 @@ void MainWindow::switchCamera(bool rotateAroundCenter)
 
 void MainWindow::moveCamera()
 {
-	camera->setEye(Vec3(eyeXEdit->text().toFloat(), eyeYEdit->text().toFloat(), eyeZEdit->text().toFloat()));
-	camera->setCenter(Vec3(centerXEdit->text().toFloat(), centerYEdit->text().toFloat(), centerZEdit->text().toFloat()));
+	camera->setEye(Vec3(eyeXEdit->value(), eyeYEdit->value(), eyeZEdit->value()));
+	camera->setCenter(Vec3(centerXEdit->value(), centerYEdit->value(), centerZEdit->value()));
 
 	verticalBar->setValue(camera->xRotate());
 	horizontalBar->setValue(camera->yRotate());
@@ -227,10 +322,62 @@ void MainWindow::moveCamera()
 void MainWindow::rotateCamera()
 {
 	camera->rotate(verticalBar->value(), horizontalBar->value());
-	updateCameraCoords();
+	updateCameraParams();
 	redraw();
 }
 
+void MainWindow::changeFov(int fov)
+{
+	camera->setFov(fov);
+	redraw();
+}
+
+void MainWindow::selectObject(int number)
+{
+	translateXEdit->setValue(objects->at(number).first.xTranslate());
+	translateYEdit->setValue(objects->at(number).first.yTranslate());
+	translateZEdit->setValue(objects->at(number).first.zTranslate());
+	currentObject = number;
+}
+
+void MainWindow::changeModel()
+{
+	objects->at(currentObject).first.setTranslate(translateXEdit->value(),
+												  translateYEdit->value(),
+												  translateZEdit->value());
+	objects->at(currentObject).first.setScale(scaleXEdit->value(),
+											  scaleYEdit->value(),
+											  scaleZEdit->value());
+	objects->at(currentObject).first.setRotate(rotateXEdit->value(),
+											   rotateYEdit->value(),
+											   rotateZEdit->value());
+
+	redraw();
+}
+
+void MainWindow::editObject(QModelIndex index)
+{
+	Tardis old = objects->at(index.row()).second;
+	float width = old.width, height = old.height, recessWidth = old.recessWidth, recessHeight = old.recessHeight;
+	float ledgeWidth = old.ledgeWidth, ledgeHeight = old.ledgeHeight, pyramidHeight = old.pyramidHeight;
+	float lanternRadius = old.lanternRadius, lanternHeight = old.lanternHeight;
+	float edgeWidth = old.edgeWidth, edgeHeight = old.edgeHeight;
+	float septumWidth = old.septumWidth; int septumCount = old.septumCount;
+	ParametersWidget *addWidget = new ParametersWidget(&width, &height, &recessWidth, &recessHeight, &ledgeWidth, &ledgeHeight, &pyramidHeight, &lanternRadius, &lanternHeight, &edgeWidth, &edgeHeight, &septumWidth, &septumCount, this);
+	addWidget->exec();
+
+	Tardis tardis(width, height, recessWidth, recessHeight, ledgeWidth, ledgeHeight, pyramidHeight, lanternRadius, lanternHeight, edgeWidth, edgeHeight, septumWidth, septumCount);
+
+	Object oldObj = objects->at(index.row()).first;
+
+	Object object = tardis.getObject();
+	object.setTranslate(oldObj.xTranslate(), oldObj.yTranslate(), oldObj.zTranslate());
+	object.setRotate(oldObj.xRotate(), oldObj.yRotate(), oldObj.zRotate());
+	object.setScale(oldObj.xScale(), oldObj.yScale(), oldObj.zScale());
+
+	objects->at(index.row()) = make_pair(object, tardis);
+	redraw();
+}
 
 void MainWindow::center()
 {
@@ -240,13 +387,38 @@ void MainWindow::center()
 	move(qr.topLeft());
 }
 
-void MainWindow::updateCameraCoords()
+void MainWindow::updateCameraParams()
 {
-	eyeXEdit->setText(QString::number(camera->eye().x, 'f', 2));
-	eyeYEdit->setText(QString::number(camera->eye().y, 'f', 2));
-	eyeZEdit->setText(QString::number(camera->eye().z, 'f', 2));
+	disconnect(eyeXEdit, SIGNAL(valueChanged(double)), this, SLOT(moveCamera()));
+	eyeXEdit->setValue(camera->eye().x);
+	connect(eyeXEdit, SIGNAL(valueChanged(double)), this, SLOT(moveCamera()));
 
-	centerXEdit->setText(QString::number(camera->center().x, 'f', 2));
-	centerYEdit->setText(QString::number(camera->center().y, 'f', 2));
-	centerZEdit->setText(QString::number(camera->center().z, 'f', 2));
+	disconnect(eyeYEdit, SIGNAL(valueChanged(double)), this, SLOT(moveCamera()));
+	eyeYEdit->setValue(camera->eye().y);
+	connect(eyeYEdit, SIGNAL(valueChanged(double)), this, SLOT(moveCamera()));
+
+	disconnect(eyeZEdit, SIGNAL(valueChanged(double)), this, SLOT(moveCamera()));
+	eyeZEdit->setValue(camera->eye().z);
+	connect(eyeZEdit, SIGNAL(valueChanged(double)), this, SLOT(moveCamera()));
+
+	disconnect(centerXEdit, SIGNAL(valueChanged(double)), this, SLOT(moveCamera()));
+	centerXEdit->setValue(camera->center().x);
+	connect(centerXEdit, SIGNAL(valueChanged(double)), this, SLOT(moveCamera()));
+
+	disconnect(centerYEdit, SIGNAL(valueChanged(double)), this, SLOT(moveCamera()));
+	centerYEdit->setValue(camera->center().y);
+	connect(centerYEdit, SIGNAL(valueChanged(double)), this, SLOT(moveCamera()));
+
+	disconnect(centerZEdit, SIGNAL(valueChanged(double)), this, SLOT(moveCamera()));
+	centerZEdit->setValue(camera->center().z);
+	connect(centerZEdit, SIGNAL(valueChanged(double)), this, SLOT(moveCamera()));
+}
+
+void MainWindow::addObject(Tardis tardis)
+{
+	int number = objects->size();
+	objects->push_back(make_pair(tardis.getObject(), tardis));
+	objectsList->addItem(QString("TARDIS №%1").arg(number + 1));
+	objectsList->item(number)->setSelected(true);
+	selectObject(number);
 }

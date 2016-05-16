@@ -10,6 +10,8 @@ class Camera
 	Mat4 _view;
 	Mat4 _projectionViewport;
 
+	float _fov, width, height, _near, _far;
+
 	bool _rotateAroundCenter;
 
 	public:
@@ -21,14 +23,18 @@ class Camera
 		Vec3 eye();
 		Vec3 center();
 		Mat4 view();
+		float fov();
+		void setFov(float fov);
 		void setEye(Vec3 eye);
 		void setCenter(Vec3 center);
 		void rotate(float xRotate, float yRotate);
 		float xRotate();
 		float yRotate();
+		float near() const;
+		float far() const;
 
 	private:
-		void calculateProjectionViewport(float fov, float width, float height, float near, float far);
+		void calculateProjectionViewport();
 		void calculateView();
 		void rotateAroundCenter(float xRotate, float yRotate);
 		float xRotateAroundCenter();

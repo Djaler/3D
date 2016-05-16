@@ -4,14 +4,15 @@
 
 class Tardis
 {
-	float width, height, recessWidth, recessHeight;
-	float ledgeWidth, ledgeHeight, pyramidHeight;
-	float lanternRadius, lanternHeight;
-	float edgeWidth, edgeHeight;
-	float septumWidth; int septumCount;
 	Object tardis;
 
 	public:
+		float width, height, recessWidth, recessHeight;
+		float ledgeWidth, ledgeHeight, pyramidHeight;
+		float lanternRadius, lanternHeight;
+		float edgeWidth, edgeHeight;
+		float septumWidth; int septumCount;
+
 		Tardis(float width, float height, float recessWidth, float recessHeight,
 			  float ledgeWidth, float ledgeHeight, float pyramidHeight,
 			  float lanternRadius, float lanternHeight, float edgeWidth,

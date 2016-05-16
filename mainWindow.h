@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QtWidgets>
+#include "tardis.h"
 #include "object.h"
 #include "camera.h"
 
@@ -13,13 +14,16 @@ class MainWindow : public QWidget
 
 	private:
 		void initUI();
+		void initCamera();
 		void center();
-		void updateCameraCoords();
+		void updateCameraParams();
+		void addObject(Tardis);
 
 		int width;
 		int height;
 
-		vector<Object> *objects;
+		vector<pair<Object, Tardis>> *objects;
+		int currentObject;
 		Camera *camera;
 		int numCores;
 
@@ -29,8 +33,13 @@ class MainWindow : public QWidget
 		QSlider *horizontalBar;
 
 		QPushButton *addButton;
-		QLineEdit *eyeXEdit, *eyeYEdit, *eyeZEdit;
-		QLineEdit *centerXEdit, *centerYEdit, *centerZEdit;
+		QDoubleSpinBox *eyeXEdit, *eyeYEdit, *eyeZEdit;
+		QDoubleSpinBox *centerXEdit, *centerYEdit, *centerZEdit;
+		QSpinBox *fovSpinBox;
+		QListWidget *objectsList;
+		QDoubleSpinBox *translateXEdit, *translateYEdit, *translateZEdit;
+		QDoubleSpinBox *scaleXEdit, *scaleYEdit, *scaleZEdit;
+		QDoubleSpinBox *rotateXEdit, *rotateYEdit, *rotateZEdit;
 
 	private slots:
 		void redraw();
@@ -38,4 +47,8 @@ class MainWindow : public QWidget
 		void switchCamera(bool);
 		void moveCamera();
 		void rotateCamera();
+		void changeFov(int);
+		void selectObject(int);
+		void changeModel();
+		void editObject(QModelIndex);
 };

@@ -14,7 +14,8 @@ TEMPLATE = app
 
 SOURCES += main.cpp \
 	mainWindow.cpp \
-    camera.cpp
+    camera.cpp \
+    object.cpp
 
 HEADERS  += \
 	matrix.h \
@@ -31,4 +32,5 @@ HEADERS  += \
 QMAKE_LFLAGS += -fopenmp
 QMAKE_CXXFLAGS += -fopenmp
 
-FORMS +=
+FORMS += \
+    form.ui

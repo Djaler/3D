@@ -52,4 +52,6 @@ class MainWindow : public QWidget
 		void changeModel();
 		void editObject(QModelIndex);
 		void deleteObj();
+		void save();
+		void open();
 };

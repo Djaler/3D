@@ -9,8 +9,8 @@ using namespace std;
 
 MainWindow::MainWindow(QWidget *parent) : QWidget(parent)
 {
-	width = 600;
-	height = 600;
+	width = 650;
+	height = 650;
 	initUI();
 	initCamera();
 
@@ -219,6 +219,14 @@ void MainWindow::initUI()
 	connect(rotateZEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
 	rightPanel->addWidget(rotateZEdit, 14, 2, 1, 1);
 
+	QPushButton *saveButton = new QPushButton("Сохранить сцену");
+	connect(saveButton, SIGNAL(pressed()), this, SLOT(save()));
+	rightPanel->addWidget(saveButton, 15, 0, 1, 3);
+
+	QPushButton *openButton = new QPushButton("Открыть сцену");
+	connect(openButton, SIGNAL(pressed()), this, SLOT(open()));
+	rightPanel->addWidget(openButton, 16, 0, 1, 3);
+
 	mainLayout->addLayout(rightPanel);
 
 	setLayout(mainLayout);
@@ -259,7 +267,7 @@ void MainWindow::redraw()
 		vector<Polygon> *object = new vector<Polygon>();
 		bool cutted = false;
 
-		//#pragma omp parallel for shared(cutted) num_threads(numCores)
+		#pragma omp parallel for shared(cutted) num_threads(numCores)
 		for(size_t j = 0; j < objects->at(i).object().polygonsCount(); j++)
 		{
 			if(cutted)
@@ -503,6 +511,107 @@ void MainWindow::deleteObj()
 	}
 	selectObject(number);
 
+	redraw();
+}
+
+void MainWindow::save()
+{
+	QString address = QFileDialog::getSaveFileName (this,"Выберите место для сохранения сцены",
+													"", "Сцена (*.scn)");
+	if(address == "")
+	{
+		return;
+	}
+	QFile file(address);
+
+	file.open(QIODevice::WriteOnly | QIODevice::Text);
+	file.write(QString("Count = %1\n").arg(objects->size()).toUtf8());
+
+	for(size_t i = 0; i < objects->size(); i++)
+	{
+		Tardis tardis = objects->at(i);
+		file.write(QString("Width = %1\n").arg(tardis.width).toUtf8());
+		file.write(QString("Height = %1\n").arg(tardis.height).toUtf8());
+		file.write(QString("Recess width = %1\n").arg(tardis.recessWidth).toUtf8());
+		file.write(QString("Recess height = %1\n").arg(tardis.recessHeight).toUtf8());
+		file.write(QString("Ledge width = %1\n").arg(tardis.ledgeWidth).toUtf8());
+		file.write(QString("Ledge height = %1\n").arg(tardis.ledgeHeight).toUtf8());
+		file.write(QString("Pyramid height = %1\n").arg(tardis.pyramidHeight).toUtf8());
+		file.write(QString("Lantern radius = %1\n").arg(tardis.lanternRadius).toUtf8());
+		file.write(QString("Lantern height = %1\n").arg(tardis.lanternHeight).toUtf8());
+		file.write(QString("Edge width = %1\n").arg(tardis.edgeWidth).toUtf8());
+		file.write(QString("Edge height = %1\n").arg(tardis.edgeHeight).toUtf8());
+		file.write(QString("Septum width = %1\n").arg(tardis.septumWidth).toUtf8());
+		file.write(QString("Septum count = %1\n").arg(tardis.septumCount).toUtf8());
+
+		Object object = tardis.object();
+		file.write(QString("X translate = %1\n").arg(object.xTranslate()).toUtf8());
+		file.write(QString("Y translate = %1\n").arg(object.yTranslate()).toUtf8());
+		file.write(QString("Z translate = %1\n").arg(object.zTranslate()).toUtf8());
+		file.write(QString("X scale = %1\n").arg(object.xScale()).toUtf8());
+		file.write(QString("Y scale = %1\n").arg(object.yScale()).toUtf8());
+		file.write(QString("Z scale = %1\n").arg(object.zScale()).toUtf8());
+		file.write(QString("X rotate = %1\n").arg(object.xRotate()).toUtf8());
+		file.write(QString("Y rotate = %1\n").arg(object.yRotate()).toUtf8());
+		file.write(QString("Z rotate = %1\n").arg(object.zRotate()).toUtf8());
+	}
+
+	file.close();
+}
+
+void MainWindow::open()
+{
+	QString address = QFileDialog::getOpenFileName(this,"Выберите файл со сценой",
+													"", "Сцена (*.scn)");
+	if(address == "")
+	{
+		return;
+	}
+	QFile file(address);
+
+	file.open(QIODevice::ReadOnly | QIODevice::Text);
+	QString pattern("= ");
+	int count = QString(file.readLine()).split(pattern)[1].toInt();
+
+	objects->clear();
+	objectsList->clear();
+	selectObject(-1);
+	for(int i = 0; i < count; i++)
+	{
+		float width = QString(file.readLine()).split(pattern)[1].toFloat();
+		float height = QString(file.readLine()).split(pattern)[1].toFloat();
+		float recessWidth = QString(file.readLine()).split(pattern)[1].toFloat();
+		float recessHeight = QString(file.readLine()).split(pattern)[1].toFloat();
+		float ledgeWidth = QString(file.readLine()).split(pattern)[1].toFloat();
+		float ledgeHeight = QString(file.readLine()).split(pattern)[1].toFloat();
+		float pyramidHeight = QString(file.readLine()).split(pattern)[1].toFloat();
+		float lanternRadius = QString(file.readLine()).split(pattern)[1].toFloat();
+		float lanternHeight = QString(file.readLine()).split(pattern)[1].toFloat();
+		float edgeWidth = QString(file.readLine()).split(pattern)[1].toFloat();
+		float edgeHeight = QString(file.readLine()).split(pattern)[1].toFloat();
+		float septumWidth = QString(file.readLine()).split(pattern)[1].toFloat();
+		int septumCount = QString(file.readLine()).split(pattern)[1].toInt();
+
+		Tardis tardis(width, height, recessWidth, recessHeight, ledgeWidth, ledgeHeight, pyramidHeight,
+					  lanternRadius, lanternHeight, edgeWidth, edgeHeight, septumWidth, septumCount);
+
+		float xTranslate = QString(file.readLine()).split(pattern)[1].toFloat();
+		float yTranslate = QString(file.readLine()).split(pattern)[1].toFloat();
+		float zTranslate = QString(file.readLine()).split(pattern)[1].toFloat();
+		float xScale = QString(file.readLine()).split(pattern)[1].toFloat();
+		float yScale = QString(file.readLine()).split(pattern)[1].toFloat();
+		float zScale = QString(file.readLine()).split(pattern)[1].toFloat();
+		float xRotate = QString(file.readLine()).split(pattern)[1].toFloat();
+		float yRotate = QString(file.readLine()).split(pattern)[1].toFloat();
+		float zRotate = QString(file.readLine()).split(pattern)[1].toFloat();
+
+		tardis.object().setTranslate(xTranslate, yTranslate, zTranslate);
+		tardis.object().setScale(xScale, yScale, zScale);
+		tardis.object().setRotate(xRotate, yRotate, zRotate);
+		tardis.object().updateModel();
+
+		addObject(tardis);
+	}
 	redraw();
 }
 

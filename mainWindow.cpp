@@ -9,12 +9,15 @@ using namespace std;
 
 MainWindow::MainWindow(QWidget *parent) : QWidget(parent)
 {
-	width = 650;
-	height = 650;
+	_width = 650;
+	_height = 650;
 	initUI();
 	initCamera();
 
 	numCores = omp_get_num_procs();
+
+	wireframe = false;
+	zBuffer = new float[_width * _height];
 
 	objects = new vector<Tardis>();
 
@@ -33,7 +36,7 @@ void MainWindow::initUI()
 	QHBoxLayout *horizontalLayout = new QHBoxLayout();
 
 	drawArea = new QLabel();
-	drawArea->resize(width, height);
+	drawArea->resize(_width, _height);
 	drawArea->show();
 	horizontalLayout->addWidget(drawArea);
 
@@ -63,7 +66,7 @@ void MainWindow::initUI()
 	mainLayout->addLayout(drawLayout);
 
 	QGridLayout *rightPanel = new QGridLayout();
-	rightPanel->setAlignment(Qt::AlignTop);
+	rightPanel->setSpacing(3);
 
 	QVBoxLayout *rotateLayout = new QVBoxLayout();
 	QRadioButton *rotateAroundCenterRadio = new QRadioButton("Поворот камеры вокруг точки зрения");
@@ -75,53 +78,66 @@ void MainWindow::initUI()
 
 	QGroupBox *rotateGroupBox = new QGroupBox();
 	rotateGroupBox->setLayout(rotateLayout);
-	rightPanel->addWidget(rotateGroupBox, 0, 0, 1, 3);
+	rightPanel->addWidget(rotateGroupBox, 0, 0, 1, 6);
 
-	rightPanel->addWidget(new QLabel("Координаты камеры"), 1, 0, 1, 3);
+	rightPanel->addWidget(new QLabel("Координаты камеры"), 1, 0, 1, 6);
 
 	eyeXEdit = new QDoubleSpinBox();
 	eyeXEdit->setRange(-99999, 99999);
 	eyeXEdit->setSingleStep(10);
 	eyeXEdit->setValue(0);
 	connect(eyeXEdit, SIGNAL(valueChanged(double)), this, SLOT(moveCamera()));
-	rightPanel->addWidget(eyeXEdit, 2, 0, 1, 1);
+	rightPanel->addWidget(eyeXEdit, 2, 0, 1, 2);
 
 	eyeYEdit = new QDoubleSpinBox();
 	eyeYEdit->setRange(-99999, 99999);
 	eyeYEdit->setSingleStep(10);
 	eyeYEdit->setValue(0);
 	connect(eyeYEdit, SIGNAL(valueChanged(double)), this, SLOT(moveCamera()));
-	rightPanel->addWidget(eyeYEdit, 2, 1, 1, 1);
+	rightPanel->addWidget(eyeYEdit, 2, 2, 1, 2);
 
 	eyeZEdit = new QDoubleSpinBox();
 	eyeZEdit->setRange(-99999, 99999);
 	eyeZEdit->setSingleStep(10);
 	eyeZEdit->setValue(-600);
 	connect(eyeZEdit, SIGNAL(valueChanged(double)), this, SLOT(moveCamera()));
-	rightPanel->addWidget(eyeZEdit, 2, 2, 1, 1);
+	rightPanel->addWidget(eyeZEdit, 2, 4, 1, 2);
 
-	rightPanel->addWidget(new QLabel("Координаты точки зрения"), 3, 0, 1, 3);
+	rightPanel->addWidget(new QLabel("Координаты точки зрения"), 3, 0, 1, 6);
 
 	centerXEdit = new QDoubleSpinBox();
 	centerXEdit->setRange(-99999, 99999);
 	centerXEdit->setSingleStep(10);
 	centerXEdit->setValue(0);
 	connect(centerXEdit, SIGNAL(valueChanged(double)), this, SLOT(moveCamera()));
-	rightPanel->addWidget(centerXEdit, 4, 0, 1, 1);
+	rightPanel->addWidget(centerXEdit, 4, 0, 1, 2);
 
 	centerYEdit = new QDoubleSpinBox();
 	centerYEdit->setRange(-99999, 99999);
 	centerYEdit->setSingleStep(10);
 	centerYEdit->setValue(0);
 	connect(centerYEdit, SIGNAL(valueChanged(double)), this, SLOT(moveCamera()));
-	rightPanel->addWidget(centerYEdit, 4, 1, 1, 1);
+	rightPanel->addWidget(centerYEdit, 4, 2, 1, 2);
 
 	centerZEdit = new QDoubleSpinBox();
 	centerZEdit->setRange(-99999, 99999);
 	centerZEdit->setSingleStep(10);
 	centerZEdit->setValue(0);
 	connect(centerZEdit, SIGNAL(valueChanged(double)), this, SLOT(moveCamera()));
-	rightPanel->addWidget(centerZEdit, 4, 2, 1, 1);
+	rightPanel->addWidget(centerZEdit, 4, 4, 1, 2);
+
+	QVBoxLayout *modelLayout = new QVBoxLayout();
+	QRadioButton *wireframeRadio = new QRadioButton("Каркасная модель");
+	connect(wireframeRadio, SIGNAL(toggled(bool)), this, SLOT(switchModel(bool)));
+	modelLayout->addWidget(wireframeRadio);
+
+	QRadioButton *solidRadio = new QRadioButton("Твердотельная модель");
+	solidRadio->setChecked(true);
+	modelLayout->addWidget(solidRadio);
+
+	QGroupBox *modelGroupBox = new QGroupBox();
+	modelGroupBox->setLayout(modelLayout);
+	rightPanel->addWidget(modelGroupBox, 5, 0, 1, 6);
 
 	QGridLayout *projectionLayout = new QGridLayout();
 	QRadioButton *perspectiveProjectionRadio = new QRadioButton("Перспективная проекция");
@@ -144,80 +160,80 @@ void MainWindow::initUI()
 
 	QGroupBox *projectionGroupBox = new QGroupBox();
 	projectionGroupBox->setLayout(projectionLayout);
-	rightPanel->addWidget(projectionGroupBox, 5, 0, 1, 3);
+	rightPanel->addWidget(projectionGroupBox, 6, 0, 1, 6);
 
 	addButton = new QPushButton("Добавить");
-	rightPanel->addWidget(addButton, 6, 0, 1, 3);
+	rightPanel->addWidget(addButton, 7, 0, 1, 3);
 	connect(addButton, SIGNAL(pressed()), this, SLOT(addDialog()));
 
 	deleteButton = new QPushButton("Удалить");
-	rightPanel->addWidget(deleteButton, 7, 0, 1, 3);
+	rightPanel->addWidget(deleteButton, 7, 3, 1, 3);
 	connect(deleteButton, SIGNAL(pressed()), this, SLOT(deleteObj()));
 
 	objectsList = new QListWidget();
 	connect(objectsList, SIGNAL(currentRowChanged(int)), this, SLOT(selectObject(int)));
 	connect(objectsList, SIGNAL(doubleClicked(QModelIndex)), this, SLOT(editObject(QModelIndex)));
-	rightPanel->addWidget(objectsList, 8, 0, 1, 3);
+	rightPanel->addWidget(objectsList, 8, 0, 1, 6);
 
-	rightPanel->addWidget(new QLabel("Смещение"), 9, 0, 1, 3);
+	rightPanel->addWidget(new QLabel("Смещение"), 9, 0, 1, 6);
 
 	translateXEdit = new QDoubleSpinBox();
 	translateXEdit->setRange(-99999, 99999);
 	translateXEdit->setSingleStep(10);
 	connect(translateXEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
-	rightPanel->addWidget(translateXEdit, 10, 0, 1, 1);
+	rightPanel->addWidget(translateXEdit, 10, 0, 1, 2);
 
 	translateYEdit = new QDoubleSpinBox();
 	translateYEdit->setRange(-99999, 99999);
 	translateYEdit->setSingleStep(10);
 	connect(translateYEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
-	rightPanel->addWidget(translateYEdit, 10, 1, 1, 1);
+	rightPanel->addWidget(translateYEdit, 10, 2, 1, 2);
 
 	translateZEdit = new QDoubleSpinBox();
 	translateZEdit->setRange(-99999, 99999);
 	translateZEdit->setSingleStep(10);
 	connect(translateZEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
-	rightPanel->addWidget(translateZEdit, 10, 2, 1, 1);
+	rightPanel->addWidget(translateZEdit, 10, 4, 1, 2);
 
-	rightPanel->addWidget(new QLabel("Масштабирование"), 11, 0, 1, 3);
+	rightPanel->addWidget(new QLabel("Масштабирование"), 11, 0, 1, 6);
 
 	scaleXEdit = new QDoubleSpinBox();
 	scaleXEdit->setRange(-99999, 99999);
 	scaleXEdit->setValue(1);
 	connect(scaleXEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
-	rightPanel->addWidget(scaleXEdit, 12, 0, 1, 1);
+	rightPanel->addWidget(scaleXEdit, 12, 0, 1, 2);
 
 	scaleYEdit = new QDoubleSpinBox();
 	scaleYEdit->setRange(-99999, 99999);
 	scaleYEdit->setValue(1);
 	connect(scaleYEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
-	rightPanel->addWidget(scaleYEdit, 12, 1, 1, 1);
+	rightPanel->addWidget(scaleYEdit, 12, 2, 1, 2);
 
 	scaleZEdit = new QDoubleSpinBox();
 	scaleZEdit->setRange(-99999, 99999);
 	scaleZEdit->setValue(1);
 	connect(scaleZEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
-	rightPanel->addWidget(scaleZEdit, 12, 2, 1, 1);
+	rightPanel->addWidget(scaleZEdit, 12, 4, 1, 2);
 
-	rightPanel->addWidget(new QLabel("Поворот"), 13, 0, 1, 3);
+	rightPanel->addWidget(new QLabel("Поворот"), 13, 0, 1, 6);
 
 	rotateXEdit = new QDoubleSpinBox();
 	rotateXEdit->setRange(-180, 180);
 	rotateXEdit->setSingleStep(10);
 	connect(rotateXEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
-	rightPanel->addWidget(rotateXEdit, 14, 0, 1, 1);
+	rightPanel->addWidget(rotateXEdit, 14, 0, 1, 2);
 
 	rotateYEdit = new QDoubleSpinBox();
 	rotateYEdit->setRange(-180, 180);
 	rotateYEdit->setSingleStep(10);
 	connect(rotateYEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
-	rightPanel->addWidget(rotateYEdit, 14, 1, 1, 1);
+	rightPanel->addWidget(rotateYEdit, 14, 2, 1, 2);
 
 	rotateZEdit = new QDoubleSpinBox();
 	rotateZEdit->setRange(-180, 180);
 	rotateZEdit->setSingleStep(10);
 	connect(rotateZEdit, SIGNAL(valueChanged(double)), this, SLOT(changeModel()));
-	rightPanel->addWidget(rotateZEdit, 14, 2, 1, 1);
+	rightPanel->addWidget(rotateZEdit, 14, 4, 1, 2);
 
 	QPushButton *saveButton = new QPushButton("Сохранить сцену");
 	connect(saveButton, SIGNAL(pressed()), this, SLOT(save()));
@@ -225,11 +241,12 @@ void MainWindow::initUI()
 
 	QPushButton *openButton = new QPushButton("Открыть сцену");
 	connect(openButton, SIGNAL(pressed()), this, SLOT(open()));
-	rightPanel->addWidget(openButton, 16, 0, 1, 3);
+	rightPanel->addWidget(openButton, 15, 3, 1, 3);
 
 	mainLayout->addLayout(rightPanel);
 
 	setLayout(mainLayout);
+
 	center();
 }
 
@@ -238,7 +255,7 @@ void MainWindow::initCamera()
 	Vec3 eye(eyeXEdit->value(), eyeYEdit->value(), eyeZEdit->value());
 	Vec3 center(centerXEdit->value(), centerYEdit->value(), centerZEdit->value());
 
-	camera = new Camera(eye, center, fovSpinBox->value(), width, height, 1, 10000);
+	camera = new Camera(eye, center, fovSpinBox->value(), _width, _height, 1, 10000);
 	switchCamera(true);
 }
 
@@ -247,18 +264,27 @@ void MainWindow::redraw()
 	QTime time;
 	time.start();
 
-	QImage image = QImage(width, height, QImage::Format_RGB32);
+	QImage image = QImage(_width, _height, QImage::Format_RGB32);
 	image.fill(QColor(0, 0, 0));
 
-	float zBuffer[width * height];
-	for(int i = 0; i < width * height; i++)
+	if(wireframe)
 	{
-		zBuffer[i] = numeric_limits<int>::max();
+		painter.begin(&image);
+		painter.setPen(QColor(255, 255, 255));
 	}
+	else
+	{
+		for(int i = 0; i < _width * _height; i++)
+		{
+			zBuffer[i] = numeric_limits<int>::max();
+		}
+	}
+
 
 	Mat4 view = camera->view();
 
 	Mat4 projectionViewport = camera->projectionViewport();
+
 
 	for(size_t i = 0; i < objects->size(); i++)
 	{
@@ -306,11 +332,26 @@ void MainWindow::redraw()
 			#pragma omp parallel for num_threads(numCores)
 			for(size_t j = 0; j < object->size(); j++)
 			{
-				drawTriangle(object->at(j).v1, object->at(j).v2, object->at(j).v3,
-							 object->at(j).intensity, &image, zBuffer, width, height);
+				if(wireframe)
+				{
+					QPoint points[3] = {QPoint(object->at(j).v1.x, object->at(j).v1.y),
+									   QPoint(object->at(j).v2.x, object->at(j).v2.y),
+									   QPoint(object->at(j).v3.x, object->at(j).v3.y)};
+					#pragma omp critical
+					painter.drawPolygon(points, 3);
+				}
+				else
+				{
+					drawTriangle(object->at(j).v1, object->at(j).v2, object->at(j).v3,
+								 object->at(j).intensity, &image, zBuffer, _width, _height);
+				}
 			}
 
 		}
+	}
+	if(wireframe)
+	{
+		painter.end();
 	}
 	drawArea->setPixmap(QPixmap::fromImage(image.mirrored()));
 
@@ -361,6 +402,12 @@ void MainWindow::switchProjection(bool perspective)
 		fovSpinBox->hide();
 		fovLabel->hide();
 	}
+}
+
+void MainWindow::switchModel(bool wireframe)
+{
+	this->wireframe = wireframe;
+	redraw();
 }
 
 void MainWindow::moveCamera()

@@ -18,12 +18,16 @@ class MainWindow : public QWidget
 		void updateCameraParams();
 		void addObject(Tardis);
 
-		int width;
-		int height;
+		int _width;
+		int _height;
 
 		vector<Tardis> *objects;
 		int currentObject;
 		Camera *camera;
+		QPainter painter;
+		bool wireframe;
+		float *zBuffer;
+
 		int numCores;
 
 		QLabel *drawArea;
@@ -45,6 +49,7 @@ class MainWindow : public QWidget
 		void addDialog();
 		void switchCamera(bool);
 		void switchProjection(bool);
+		void switchModel(bool);
 		void moveCamera();
 		void rotateCamera();
 		void changeFov(int);

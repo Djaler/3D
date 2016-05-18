@@ -34,5 +34,4 @@ HEADERS  += \
 QMAKE_LFLAGS += -fopenmp
 QMAKE_CXXFLAGS += -fopenmp
 
-FORMS += \
-    form.ui
+FORMS +=

@@ -248,6 +248,8 @@ void MainWindow::initUI()
 	setLayout(mainLayout);
 
 	center();
+
+	setMaximumSize(sizeHint());
 }
 
 void MainWindow::initCamera()
@@ -572,6 +574,14 @@ void MainWindow::save()
 	QFile file(address);
 
 	file.open(QIODevice::WriteOnly | QIODevice::Text);
+
+	file.write(QString("Eye x = %1\n").arg(camera->eye().x).toUtf8());
+	file.write(QString("Eye y = %1\n").arg(camera->eye().y).toUtf8());
+	file.write(QString("Eye z = %1\n").arg(camera->eye().z).toUtf8());
+	file.write(QString("Camera x = %1\n").arg(camera->center().x).toUtf8());
+	file.write(QString("Camera y = %1\n").arg(camera->center().y).toUtf8());
+	file.write(QString("Camera z = %1\n").arg(camera->center().z).toUtf8());
+
 	file.write(QString("Count = %1\n").arg(objects->size()).toUtf8());
 
 	for(size_t i = 0; i < objects->size(); i++)
@@ -617,7 +627,18 @@ void MainWindow::open()
 	QFile file(address);
 
 	file.open(QIODevice::ReadOnly | QIODevice::Text);
+
 	QString pattern("= ");
+
+	float eyeX = QString(file.readLine()).split(pattern)[1].toFloat();
+	float eyeY = QString(file.readLine()).split(pattern)[1].toFloat();
+	float eyeZ = QString(file.readLine()).split(pattern)[1].toFloat();
+	float centerX = QString(file.readLine()).split(pattern)[1].toFloat();
+	float centerY = QString(file.readLine()).split(pattern)[1].toFloat();
+	float centerZ = QString(file.readLine()).split(pattern)[1].toFloat();
+	camera->setEye(Vec3(eyeX, eyeY, eyeZ));
+	camera->setCenter(Vec3(centerX, centerY, centerZ));
+
 	int count = QString(file.readLine()).split(pattern)[1].toInt();
 
 	objects->clear();
